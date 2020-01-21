@@ -4,23 +4,21 @@ library(sf)
 library(sp)
 library(ggplot2)
 
-indir <- "F:/Redd_data/indir"
-outdir <- "F:/Redd_data/outdir"
 
 ##Read in RKM files and pre-process##
-lemhi_rkm <- st_read(paste0(indir, "/Lemhi_CL_1kmPoints.shp")) %>%
+lemhi_rkm <- st_read("data/rkm/Lemhi_CL_1kmPoints.shp") %>%
   dplyr::select(17, 18) %>%
   mutate(River = "Lemhi River")
 
 
-pah_rkm <- st_read(paste0(indir, "/Pahsimeroi_CL_1kmPoints.shp")) %>%
+pah_rkm <- st_read("data/rkm/Pahsimeroi_CL_1kmPoints.shp") %>%
   dplyr::select(4,5) %>%
   st_transform(crs = crs(lemhi_rkm)) %>%
   mutate(River = "Pahsimeroi River")
 
  
 
-upsalmon_rkm <- st_read(paste0(indir, "/UpperSalmon_CL_1kmPoints.shp")) %>%
+upsalmon_rkm <- st_read("data/rkm/UpperSalmon_CL_1kmPoints.shp") %>%
   dplyr::select(4,5) %>%
   st_transform(crs = crs(lemhi_rkm)) %>%
   mutate(River = "Salmon River")
@@ -32,7 +30,7 @@ mra_rkm <- lemhi_rkm %>%
 
 ##Read in/filter redd data covnert to sf object##
 
-all_redds <- st_read(paste0(indir, "/F_G_redds_all_UpTo_2018.shp"))
+all_redds <- st_read("data/redd/F_G_redds_all_UpTo_2018.shp")
 
 mra_redds <- all_redds %>%
   filter(CountNew == 1) %>%
@@ -47,7 +45,7 @@ mra_redds <- all_redds %>%
   
 ##Read in norwest temp stuff##
 
-all_norwest <- st_read(paste0(indir, "/NorWeST_temps.shp"))
+all_norwest <- st_read("data/norwest/NorWeST_temps.shp")
 
 mra_norwest <- all_norwest %>%
   filter(GNIS_NA == "Lemhi River" |
@@ -84,7 +82,7 @@ hist <- ggplot(redd_norw_rkm,aes(x = S36_201,
 hist
 
 geom_dens <- ggplot(redd_norw_rkm, 
-                    aes(x = S36_201, 
+                    aes(x = S36_201, ##Which scenario to use?
                         color = River, 
                         fill = River)) +
   geom_density(alpha = 0.3) +
@@ -93,6 +91,18 @@ geom_dens <- ggplot(redd_norw_rkm,
        y = "Density")
 
 geom_dens
+
+##Plot of all available temps##
+alltemps_dens <- ggplot(mra_norwest, 
+                    aes(x = S36_201, ##Which scenario to use?
+                        color = GNIS_NA, 
+                        fill = GNIS_NA)) +
+  geom_density(alpha = 0.3) +
+  theme_bw() +
+  labs(x = "Mean August Temperature",
+       y = "Density")
+
+alltemps_dens
 
 
 ##Plotting Temp/RKM and redd locations##
