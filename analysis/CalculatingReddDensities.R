@@ -87,14 +87,17 @@ norw_rkm <- mra_norwest %>%
 
 ##Hist of norwest temps at spawning locations (hab use temp)##
 
-hist <- ggplot(redd_norw_rkm,aes(x = S36_201,
+spwn_selection <- ggplot(redd_norw_rkm,aes(x = S36_201,
                                  color = River, 
                                  fill = River)) +
-  geom_histogram(alpha = 0.3)
+  geom_histogram(alpha = 0.3, position = "dodge") +
+  theme_bw() +
+  labs(x = "Mean August Temperature",
+       y = "Count") 
 
-hist
+spwn_selection
 
-geom_dens <- ggplot(redd_norw_rkm, 
+spwn_geom_dens <- ggplot(redd_norw_rkm, 
                     aes(x = S36_201, ##Which scenario to use?
                         color = River, 
                         fill = River)) +
@@ -103,7 +106,7 @@ geom_dens <- ggplot(redd_norw_rkm,
   labs(x = "Mean August Temperature",
        y = "Density")
 
-geom_dens
+spwn_geom_dens
 
 ##Plot of all available temps##
 alltemps_dens <- ggplot(mra_norwest, 
