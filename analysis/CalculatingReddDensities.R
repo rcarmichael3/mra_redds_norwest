@@ -127,10 +127,15 @@ alltemps_dens
 ggplot(norw_rkm, 
        aes(x = rkm, y = S36_201, group = GNIS_NA)) +
   geom_line(aes(color = GNIS_NA)) +
-  theme_bw()
+  theme_bw() +
+  labs(x = "Mean August Temperature",
+       y = "River Kilometer")
 
 
+##Making plot for Lemhi only##
 
+Lem_redd_norw <- redd_norw_rkm %>%
+  filter(GNIS_NA == "Lemhi River")
 
 
 
