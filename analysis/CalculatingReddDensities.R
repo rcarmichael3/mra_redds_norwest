@@ -1,3 +1,13 @@
+## Calculate observed redd densities in MRA valley segments #
+#
+# Created by: Richie Carmichael
+# Created date: January 2020
+#
+# Calculating redd densities for display in MRA reports along with 
+# NorWest temperature data
+#
+#############################################################
+
 library(dplyr)
 library(raster)
 library(sf)
