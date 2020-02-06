@@ -123,8 +123,9 @@ lemh_mcnyset = lemh_tmp_2011 %>%
 # clean up lemhi mcnyset data
 rm(lemh_tmp_2011, lemh_tmp_2012, lemh_tmp_2013)
 
+tmp = st_read("data/mcnyset_temp/Lem_2012_8D_Mx.shp")
 
-
+############################################
 ##Joining temperature and rkm to redd data##
 redd_norw_rkm <- mra_redds %>%
   st_join(mra_rkm, 
