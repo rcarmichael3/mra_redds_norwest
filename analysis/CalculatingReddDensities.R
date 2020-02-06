@@ -8,57 +8,70 @@
 #
 #############################################################
 
+## load necessary libraryies
 library(dplyr)
 library(raster)
 library(sf)
 library(sp)
 library(ggplot2)
 
-
-##Read in RKM files and pre-process##
-lemhi_rkm <- st_read("data/rkm/Lemhi_CL_1kmPoints.shp") %>%
-  dplyr::select(1, 4) %>%
+########################
+# RIVER KILOMETER DATA #
+########################
+## read in RKM files
+lemh_rkm = st_read("data/rkm/Lemhi_CL_1kmPoints.shp") %>%
+  dplyr::select(Id) %>%
   mutate(River = "Lemhi River")
 
-
-pah_rkm <- st_read("data/rkm/Pahsimeroi_CL_1kmPoints.shp") %>%
-  dplyr::select(1,4) %>%
-  st_transform(crs = crs(lemhi_rkm)) %>%
+pahs_rkm = st_read("data/rkm/Pahsimeroi_CL_1kmPoints.shp") %>%
+  dplyr::select(Id) %>%
+  st_transform(crs = crs(lemh_rkm)) %>%
   mutate(River = "Pahsimeroi River")
 
- 
-
-upsalmon_rkm <- st_read("data/rkm/UpperSalmon_CL_1kmPoints.shp") %>%
-  dplyr::select(1,4) %>%
-  st_transform(crs = crs(lemhi_rkm)) %>%
+upsa_rkm = st_read("data/rkm/UpperSalmon_CL_1kmPoints.shp") %>%
+  dplyr::select(Id) %>%
+  st_transform(crs = crs(lemh_rkm)) %>%
   mutate(River = "Salmon River")
 
-
-mra_rkm <- lemhi_rkm %>%
-  rbind(pah_rkm) %>%
-  rbind(upsalmon_rkm) %>%
+# bind the above 3 sf objects together
+mra_rkm = lemh_rkm %>%
+  rbind(pahs_rkm) %>%
+  rbind(upsa_rkm) %>%
   rename(rkm = Id)
+plot(mra_rkm)
 
-##Read in/filter redd data covnert to sf object##
+# clean up the previous sf objects
+rm(lemh_rkm, pahs_rkm, upsa_rkm)
 
-# all_redds <- st_read("data/redd/F_G_redds_all_UpTo_2018.shp")
-# 
-# mra_redds <- all_redds %>%
-#   filter(CountNew == 1) %>%
-#   filter(Waterbody == "Lemhi River" |
-#            Waterbody == "Pahsimeroi River" |
-#            Waterbody == "Salmon River") %>%
-#   st_as_sf(coords = c("Latitude", "Longitude"),
-#            crs = 4326) %>%
-#   st_transform(crs = crs(lemhi_rkm))
-# st_write(mra_redds, "data/redd/mra_redds.shp")
+# plot rkm data
+rkm_p = mra_rkm %>%
+  ggplot(aes(color = River, fill = River)) +
+  geom_sf() +
+  theme_bw() +
+  labs(title = "River Kilometer Data")
+rkm_p
 
-  
-mra_redds <- st_read("data/redd/mra_redds.shp") %>%
-  st_transform(crs = crs(lemhi_rkm))
-  
+#############
+# REDD DATA #
+#############
+# read in, filter redd data and convert to an sf object
+mra_redds = st_read("data/redd/F_G_redds_all_UpTo_2018.shp") %>%
+  filter(CountNew == 1) %>%    # remove duplicate counted redds
+  filter(Waterbody %in% c("Lemhi River", "Pahsimeroi River", "Salmon River")) %>%
+  st_as_sf(coords = c("Latitude", "Longitude"),
+           crs = 4326) %>%     # set redd data to WGS84
+  st_transform(crs = crs(mra_rkm))
+
+# write out cleaned redd data
+st_write(mra_redds, "data/redd/mra_redds.shp",
+         delete_layer = T)
+
+####################
+# TEMPERATURE DATA #
+####################
+
+
 ##Read in norwest temp stuff##
-
 # all_norwest <- st_read("data/norwest/NorWeST_temps.shp")
 # 
 # mra_norwest <- all_norwest %>%
