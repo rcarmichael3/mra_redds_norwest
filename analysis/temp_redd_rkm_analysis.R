@@ -78,12 +78,24 @@ st_write(mra_redds, "data/redd/mra_redds.shp")
 ############################
 salmon_mcnyset_sf = st_read("data/mcnyset_temp/salmon_mcnyset_sf.shp")
 
-mcny_p = salmon_mcnyset_sf %>%
+# plot full mcnyset data
+full_mcny_p = salmon_mcnyset_sf %>%
   ggplot() +
   geom_sf(colour = "blue") +
   theme_bw() +
   labs(title = "Modeled Temperature Data")
-mcny_p
+full_mcny_p
+
+# now I trimmed the full dataset in ArcMap to only include MRA watershed mainstems
+mra_mcnyset = st_read("data/mcnyset_temp/salmon_mcnyset_sf_mainstems.shp")
+
+# plot full mcnyset data
+mra_mcny_p = mra_mcnyset %>%
+  ggplot() +
+  geom_sf(colour = "blue") +
+  theme_bw() +
+  labs(title = "Modeled Temperature Data")
+mra_mcny_p
 
 ############################
 # NORWEST TEMPERATURE DATA #
