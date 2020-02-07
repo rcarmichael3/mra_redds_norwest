@@ -10,9 +10,9 @@
 
 ## load necessary libraryies
 library(dplyr)
-library(raster)
 library(sf)
-library(sp)
+library(raster)
+# library(sp)
 library(ggplot2)
 
 ########################
@@ -38,7 +38,6 @@ mra_rkm = lemh_rkm %>%
   rbind(pahs_rkm) %>%
   rbind(upsa_rkm) %>%
   rename(rkm = Id)
-plot(mra_rkm)
 
 # clean up the previous sf objects
 rm(lemh_rkm, pahs_rkm, upsa_rkm)
@@ -62,11 +61,29 @@ mra_redds = st_read("data/redd/F_G_redds_all_UpTo_2018.shp") %>%
            crs = 4326) %>%     # set redd data to WGS84
   st_transform(crs = crs(mra_rkm))
 
+# plot redd data
+redd_p = mra_redds %>%
+  ggplot(aes(color = Waterbody, fill = Waterbody)) +
+  geom_sf() +
+  theme_bw() +
+  labs(title = "Redd Data")
+redd_p
+
 # write out cleaned redd data
 st_write(mra_redds, "data/redd/mra_redds.shp") 
          #, delete_layer = T) # to overwrite existing file
 
-# ADD SECTION HERE TO READ IN ALL OF THE MCNYSET DATA I MERGED YESTERDAY
+############################
+# MCNYSET TEMPERATURE DATA #
+############################
+salmon_mcnyset_sf = st_read("data/mcnyset_temp/salmon_mcnyset_sf.shp")
+
+mcny_p = salmon_mcnyset_sf %>%
+  ggplot() +
+  geom_sf(colour = "blue") +
+  theme_bw() +
+  labs(title = "Modeled Temperature Data")
+mcny_p
 
 ############################
 # NORWEST TEMPERATURE DATA #
