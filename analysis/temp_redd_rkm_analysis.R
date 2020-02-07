@@ -66,6 +66,8 @@ mra_redds = st_read("data/redd/F_G_redds_all_UpTo_2018.shp") %>%
 st_write(mra_redds, "data/redd/mra_redds.shp") 
          #, delete_layer = T) # to overwrite existing file
 
+# ADD SECTION HERE TO READ IN ALL OF THE MCNYSET DATA I MERGED YESTERDAY
+
 ############################
 # NORWEST TEMPERATURE DATA #
 ############################
