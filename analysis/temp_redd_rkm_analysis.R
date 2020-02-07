@@ -91,40 +91,6 @@ st_write(mra_redds, "data/redd/mra_redds.shp")
 # # clean up the previous sf norwest temp objects
 # rm(lemh_norw, pahs_norw, upsa_norw)
 
-############################
-# MCNYSET TEMPERATURE DATA #
-############################
-# read in modeled lemhi data
-lemh_tmp_2011 = st_read("../mra_fish_n_hydro/data/lemhi_temp_shapefiles/Lemhi_2011/Lem_2011_8D_mn.shp") %>%
-  mutate_at(vars(starts_with("Tmn")), list(~na_if(., "-9999"))) %>%
-  rename_at(vars(starts_with("Tmn")), funs(paste0("Tmn_", substring(., 8, 10)))) %>%
-  mutate(year = "2011") %>%
-  dplyr::select(RCAID, year, starts_with("Tmn"))
-
-lemh_tmp_2012 = st_read("../mra_fish_n_hydro/data/lemhi_temp_shapefiles/Lemhi_2012/Lem_2012_8D_mn.shp") %>%
-  mutate_at(vars(starts_with("Tmn")), list(~na_if(., "-9999"))) %>%
-  rename_at(vars(starts_with("Tmn")), funs(paste0("Tmn_", substring(., 8, 10)))) %>%
-  mutate(year = "2012") %>%
-  dplyr::select(RCAID, year, starts_with("Tmn"))
-
-lemh_tmp_2013 = st_read("../mra_fish_n_hydro/data/lemhi_temp_shapefiles/Lemhi_2013/Lem_2013_8D_mn.shp") %>%
-  rename_at(vars(starts_with("X")), funs(paste0("Tmn_", substring(., 4, 6)))) %>%
-  mutate(year = "2013") %>%
-  rename(RCAID = LEM_RCAID) %>%
-  dplyr::select(RCAID, year, starts_with("Tmn"))
-
-# bind the lemhi mcnyset data together
-lemh_mcnyset = lemh_tmp_2011 %>%
-  rbind(lemh_tmp_2012) %>%
-  rbind(lemh_tmp_2013) %>%
-  mutate(watershed = "Lemhi") %>%
-  dplyr::select(watershed, everything())
-
-# clean up lemhi mcnyset data
-rm(lemh_tmp_2011, lemh_tmp_2012, lemh_tmp_2013)
-
-tmp = st_read("data/mcnyset_temp/Lem_2012_8D_Mx.shp")
-
 ############################################
 ##Joining temperature and rkm to redd data##
 redd_norw_rkm <- mra_redds %>%
