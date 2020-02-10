@@ -160,11 +160,20 @@ temp_rkm_map
 # temperature map, line type, add redds
 temp_rkm_redd_map = temp_rkm_sf %>%
   ggplot() +
-  geom_sf(aes(colour = mn_max_8d_tmp_d241)) +
+  geom_sf(aes(colour = mn_max_8d_tmp_d241),
+          lwd = 2) +
   scale_colour_distiller(palette = "Spectral") +
-  geom_sf(data = mra_redds %>% 
-            filter(Waterbody == "Lemhi River"), 
-          size = 0.5) +
+  # geom_sf(data = mra_redds %>%
+  #           filter(Waterbody == "Lemhi River"),
+  #         size = 1,
+  #         shape = 1,
+  #         position = position_nudge(x = 20000, y = 20000)) +
+  geom_sf_label(data = mra_redds %>%
+            filter(Waterbody == "Lemhi River"),
+            label = '',
+            nudge_x = 5000,
+            size = 0.1,
+            label.size = 3) +
   theme_bw() +
   labs(title = "Lemhi River",
        colour = "Mean of 8-day Max Temp, Aug 29 (C)")
