@@ -49,27 +49,27 @@ rm(lemh_2011_8d_mn, lemh_2012_8d_mn, lemh_2013_8d_mn)
 
 ################
 # LEMHI 8D MAX
-lemh_2011_8d_mx = st_read("data/mcnyset_temp/lemhi/2011/Lem_2011_8D_Mx.shp") %>%
+lemh_2011_8d_mx = st_read("data/temperature/mcnyset/lemhi/2011/Lem_2011_8D_Mx.shp") %>%
   dplyr::select(RCAID, starts_with("TMx")) %>%
   mutate(year = "2011") %>%
   rename_at(vars(starts_with("TMx")), funs(paste0("Tmx_", substring(., 8, 10))))
 
-lemh_2012_8d_mx = st_read("data/mcnyset_temp/lemhi/2012/Lem_2012_8D_Mx.shp") %>%
+lemh_2012_8d_mx = st_read("data/temperature/mcnyset/lemhi/2012/Lem_2012_8D_Mx.shp") %>%
   dplyr::select(RCAID, starts_with("TMx")) %>%
   mutate(year = "2012") %>%
   rename_at(vars(starts_with("TMx")), funs(paste0("Tmx_", substring(., 8, 10))))
 
-lemh_2013_8d_mx = st_read("data/mcnyset_temp/lemhi/2013/Lem_2013_8D_Mx.shp") %>%
+lemh_2013_8d_mx = st_read("data/temperature/mcnyset/lemhi/2013/Lem_2013_8D_Mx.shp") %>%
   dplyr::select(RCAID, starts_with("TMx")) %>%
   mutate(year = "2013") %>%
   rename_at(vars(starts_with("TMx")), funs(paste0("Tmx_", substring(., 8, 10))))
 
-lemh_2014_8d_mx = st_read("data/mcnyset_temp/lemhi/2014/Lem_2014_8D_Mx.shp") %>%
+lemh_2014_8d_mx = st_read("data/temperature/mcnyset/lemhi/2014/Lem_2014_8D_Mx.shp") %>%
   dplyr::select(RCAID, starts_with("TMx")) %>%
   mutate(year = "2014") %>%
   rename_at(vars(starts_with("TMx")), funs(paste0("Tmx_", substring(., 8, 10))))
 
-lemh_2015_8d_mx = st_read("data/mcnyset_temp/lemhi/2015/Lem_2015_8D_Mx.shp") %>%
+lemh_2015_8d_mx = st_read("data/temperature/mcnyset/lemhi/2015/Lem_2015_8D_Mx.shp") %>%
   dplyr::select(RCAID, starts_with("TMx")) %>%
   mutate(year = "2015") %>%
   rename_at(vars(starts_with("TMx")), funs(paste0("Tmx_", substring(., 8, 10))))
@@ -88,12 +88,12 @@ rm(lemh_2011_8d_mx, lemh_2012_8d_mx, lemh_2013_8d_mx, lemh_2014_8d_mx, lemh_2015
 
 ###################
 # PAHSIMEROI 8D MAX
-pahs_2011_8d_mx = st_read("data/mcnyset_temp/pahsimeroi/2011/Pahs_2011_8D_Mx.shp") %>%
+pahs_2011_8d_mx = st_read("data/temperature/mcnyset/pahsimeroi/2011/Pahs_2011_8D_Mx.shp") %>%
   dplyr::select(RCAID, starts_with("TMx")) %>%
   mutate(year = "2011") %>%
   rename_at(vars(starts_with("TMx")), funs(paste0("Tmx_", substring(., 8, 10))))
 
-pahs_2013_8d_mx = st_read("data/mcnyset_temp/pahsimeroi/2013/Pahs_2013_8D_Mx.shp") %>%
+pahs_2013_8d_mx = st_read("data/temperature/mcnyset/pahsimeroi/2013/Pahs_2013_8D_Mx.shp") %>%
   dplyr::select(RCAID, starts_with("TMx")) %>%
   mutate(year = "2013") %>%
   rename_at(vars(starts_with("TMx")), funs(paste0("Tmx_", substring(., 7, 9))))
@@ -109,13 +109,13 @@ rm(pahs_2011_8d_mx, pahs_2013_8d_mx)
 
 #####################
 # UPPER SALMON 8D MAX
-upsa_2011_8d_max = st_read("data/mcnyset_temp/upper_salmon/2011/USal_2011_8D_Mx.shp") %>%
+upsa_2011_8d_max = st_read("data/temperature/mcnyset/upper_salmon/2011/USal_2011_8D_Mx.shp") %>%
   rename(RCAID = rca_id) %>%
   dplyr::select(RCAID, starts_with("TMx")) %>%
   mutate(year = "2011") %>%
   rename_at(vars(starts_with("TMx")), funs(paste0("Tmx_", substring(., 8, 10))))
 
-upsa_2013_8d_max = st_read("data/mcnyset_temp/upper_salmon/2013/USal_2013_8D_Mx.shp") %>%
+upsa_2013_8d_max = st_read("data/temperature/mcnyset/upper_salmon/2013/USal_2013_8D_Mx.shp") %>%
   dplyr::select(RCAID, starts_with("TMx")) %>%
   mutate(year = "2013") %>%
   rename_at(vars(starts_with("TMx")), funs(paste0("Tmx_", substring(., 8, 10))))
@@ -158,6 +158,6 @@ salmon_mcnyset_sf = lemh_8d_mn %>%
 rm(lemh_8d_mn, lemh_8d_mx, pahs_8d_mx, upsa_8d_mx)
 
 # write out final results
-st_write(salmon_mcnyset_sf, "data/mcnyset_temp/salmon_mcnyset_sf.shp")
+st_write(salmon_mcnyset_sf, "data/temperature/mcnyset/salmon_mcnyset_sf.shp")
          #, delete_layer = T) # to overwrite existing file) 
 
