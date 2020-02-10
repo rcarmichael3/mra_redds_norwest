@@ -77,7 +77,7 @@ st_write(mra_redds, "data/redd/mra_redds.shp")
 ############################
 # MCNYSET TEMPERATURE DATA #
 ############################
-salmon_mcnyset_sf = st_read("data/mcnyset_temp/salmon_mcnyset_sf.shp")
+salmon_mcnyset_sf = st_read("data/temperature/mcnyset/salmon_mcnyset_sf.shp")
 
 # plot full mcnyset data
 full_mcny_p = salmon_mcnyset_sf %>%
@@ -88,7 +88,7 @@ full_mcny_p = salmon_mcnyset_sf %>%
 full_mcny_p
 
 # now I trimmed the full dataset in ArcMap to only include MRA watershed mainstems
-mra_mcnyset = st_read("data/mcnyset_temp/salmon_mcnyset_sf_mainstems.shp")
+mra_mcnyset = st_read("data/temperature/mcnyset/salmon_mcnyset_sf_mainstems.shp")
 
 # plot full mcnyset data
 mra_mcny_p = mra_mcnyset %>%
