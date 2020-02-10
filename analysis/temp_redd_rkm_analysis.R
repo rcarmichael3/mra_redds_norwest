@@ -122,6 +122,70 @@ mra_mcny_p
 # # clean up the previous sf norwest temp objects
 # rm(lemh_norw, pahs_norw, upsa_norw)
 
+###############################
+# Join temp data and rkm data #
+###############################
+mra_mcnyset = mra_mcnyset %>%
+  st_transform(crs = crs(mra_rkm))
+
+salmon_mcnyset_sf = salmon_mcnyset_sf %>%
+  st_transform(crs = crs(mra_rkm))
+
+#################
+# START W/ LEMHI
+# rkm joined to temp
+temp_rkm_sf = mra_mcnyset %>%
+  dplyr::select(watershed, year, variable, RCAID, d241) %>%
+  filter(watershed == "Lemhi") %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  dplyr::select(- River) %>%
+  arrange(watershed, rkm) %>%
+  group_by(rkm) %>%
+  summarise(mn_max_8d_tmp_d241 = mean(d241)) %>%
+  filter(!rkm == "92") # seems to be an errant estimate at confluence with Salmon
+
+# temperature map, line type
+temp_rkm_p = temp_rkm_sf %>%
+  ggplot(aes(colour = mn_max_8d_tmp_d241)) +
+  scale_colour_distiller(palette = "Spectral") +
+  geom_sf() +
+  theme_bw() +
+  labs(title = "Lemhi River",
+       colour = "Mean of 8-day Max Temp, Aug 29 (C)")
+temp_rkm_p
+
+# longitudinal temperature profile
+lemh_long_temp_pro = temp_rkm_sf %>%
+  ggplot() +
+  geom_line(aes(x = rkm, y = mn_max_8d_tmp_d241), 
+            size = 1.5, colour = "midnightblue") +
+  geom_smooth(aes(x = rkm, y = mn_max_8d_tmp_d241),
+              method = "loess", se = F) +
+  theme_bw() +
+  labs(x = "River Kilometer", 
+       y = "Mean of 8-day Max Temp, Aug 29 (C)",
+       title = "Lemhi River Longitudinal Temp Profile")
+lemh_long_temp_pro  
+
+# temp joined to rkm
+rkm_temp_sf = mra_rkm %>%
+  filter(River == "Lemhi River") %>%
+  st_join(salmon_mcnyset_sf,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  dplyr::select(watershed, rkm, year, variable, d241)
+
+# temperature map, point type
+# rkm_temp_p = rkm_temp_sf %>%
+#   ggplot(aes(colour = d241)) +
+#   geom_sf() +
+#   scale_colour_distiller(palette = "Spectral") +
+#   theme_bw() +
+#   labs(colour = "8-day Mean Temperature, Aug 29 (C)")
+# rkm_temp_p
+
 ############################################
 ##Joining temperature and rkm to redd data##
 redd_norw_rkm <- mra_redds %>%
