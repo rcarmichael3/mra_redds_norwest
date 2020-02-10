@@ -44,12 +44,11 @@ mra_rkm = lemh_rkm %>%
 rm(lemh_rkm, pahs_rkm, upsa_rkm)
 
 # plot rkm data
-rkm_p = mra_rkm %>%
+mra_rkm %>%
   ggplot(aes(color = River, fill = River)) +
   geom_sf() +
   theme_bw() +
   labs(title = "River Kilometer Data")
-rkm_p
 
 #############
 # REDD DATA #
@@ -63,12 +62,11 @@ mra_redds = st_read("data/redd/F_G_redds_all_UpTo_2018.shp") %>%
   st_transform(crs = crs(mra_rkm))
 
 # plot redd data
-redd_p = mra_redds %>%
+mra_redds %>%
   ggplot(aes(color = Waterbody, fill = Waterbody)) +
   geom_sf() +
   theme_bw() +
   labs(title = "Redd Data")
-redd_p
 
 # write out cleaned redd data
 st_write(mra_redds, "data/redd/mra_redds.shp") 
@@ -80,57 +78,56 @@ st_write(mra_redds, "data/redd/mra_redds.shp")
 salmon_mcnyset_sf = st_read("data/temperature/mcnyset/salmon_mcnyset_sf.shp")
 
 # plot full mcnyset data
-full_mcny_p = salmon_mcnyset_sf %>%
+salmon_mcnyset_sf %>%
   ggplot() +
   geom_sf(colour = "blue") +
   theme_bw() +
   labs(title = "Modeled Temperature Data")
-full_mcny_p
+rm(salmon_mcnyset_sf)
 
 # now I trimmed the full dataset in ArcMap to only include MRA watershed mainstems
-mra_mcnyset = st_read("data/temperature/mcnyset/salmon_mcnyset_sf_mainstems.shp")
+mra_mcnyset = st_read("data/temperature/mcnyset/salmon_mcnyset_sf_mainstems.shp") %>%
+  st_transform(crs = crs(mra_rkm))
 
 # plot full mcnyset data
-mra_mcny_p = mra_mcnyset %>%
+mra_mcnyset %>%
   ggplot() +
-  geom_sf(colour = "blue") +
+  geom_sf(colour = "blue", size = 1.2) +
   theme_bw() +
   labs(title = "Modeled Temperature Data")
-mra_mcny_p
 
 ############################
 # NORWEST TEMPERATURE DATA #
 ############################
 # ## read in norwest temp data
-# mra_norwest = st_read("data/norwest/NorWeST_temps.shp") %>%
+# mra_norwest = st_read("data/temperature/norwest/NorWeST_temps.shp") %>%
 #   filter(GNIS_NA %in% c("Lemhi River", "Pahsimeroi River", "Salmon River")) %>%
 #   st_transform(crs = crs(mra_rkm))
 # 
 # # write out cleaned mra norwest data
-# st_write(mra_norwest, "data/norwest/mra_norwest.shp")
+# st_write(mra_norwest, "data/temperature/norwest/mra_norwest.shp")
 #          #, delete_layer = T) # to overwrite existing file
-# 
-# # read in the cleaned norwest temp data from each watershed
-# lemh_norw = st_read("data/norwest/Lemhi_norw.shp")
-# pahs_norw = st_read("data/norwest/Pah_norw.shp")
-# upsa_norw = st_read("data/norwest/Salmon_norw.shp")
-# 
-# # and bind the above 3 sf norwest temp object
-# mra_norw = lemh_norw %>%
-#   rbind(pahs_norw) %>%
-#   rbind(upsa_norw)
-# 
-# # clean up the previous sf norwest temp objects
-# rm(lemh_norw, pahs_norw, upsa_norw)
+
+# read in the cleaned norwest temp data from each watershed
+lemh_norw = st_read("data/temperature/norwest/Lemhi_norw.shp")
+pahs_norw = st_read("data/temperature/norwest/Pah_norw.shp")
+upsa_norw = st_read("data/temperature/norwest/Salmon_norw.shp")
+
+# and bind the above 3 norwest sf objects
+mra_norwest = lemh_norw %>%
+  rbind(pahs_norw) %>%
+  rbind(upsa_norw)
+
+# clean up the previous sf norwest temp objects
+rm(lemh_norw, pahs_norw, upsa_norw)
+
+#-----------------------------------------------
+# END DATA PREP
 
 ###############################
 # Join temp data and rkm data #
 ###############################
-mra_mcnyset = mra_mcnyset %>%
-  st_transform(crs = crs(mra_rkm))
 
-salmon_mcnyset_sf = salmon_mcnyset_sf %>%
-  st_transform(crs = crs(mra_rkm))
 
 #################
 # START W/ LEMHI
