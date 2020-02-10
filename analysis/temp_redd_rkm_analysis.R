@@ -14,6 +14,7 @@ library(sf)
 library(raster)
 # library(sp)
 library(ggplot2)
+library(tidyverse)
 
 ########################
 # RIVER KILOMETER DATA #
@@ -147,17 +148,30 @@ temp_rkm_sf = mra_mcnyset %>%
   filter(!rkm == "92") # seems to be an errant estimate at confluence with Salmon
 
 # temperature map, line type
-temp_rkm_p = temp_rkm_sf %>%
+temp_rkm_map = temp_rkm_sf %>%
   ggplot(aes(colour = mn_max_8d_tmp_d241)) +
   scale_colour_distiller(palette = "Spectral") +
   geom_sf() +
   theme_bw() +
   labs(title = "Lemhi River",
        colour = "Mean of 8-day Max Temp, Aug 29 (C)")
-temp_rkm_p
+temp_rkm_map
+
+# temperature map, line type, add redds
+temp_rkm_redd_map = temp_rkm_sf %>%
+  ggplot() +
+  geom_sf(aes(colour = mn_max_8d_tmp_d241)) +
+  scale_colour_distiller(palette = "Spectral") +
+  geom_sf(data = mra_redds %>% 
+            filter(Waterbody == "Lemhi River"), 
+          size = 0.5) +
+  theme_bw() +
+  labs(title = "Lemhi River",
+       colour = "Mean of 8-day Max Temp, Aug 29 (C)")
+temp_rkm_redd_map  
 
 # longitudinal temperature profile
-lemh_long_temp_pro = temp_rkm_sf %>%
+lemh_long_temp_p = temp_rkm_sf %>%
   ggplot() +
   geom_line(aes(x = rkm, y = mn_max_8d_tmp_d241), 
             size = 1.5, colour = "midnightblue") +
@@ -167,7 +181,49 @@ lemh_long_temp_pro = temp_rkm_sf %>%
   labs(x = "River Kilometer", 
        y = "Mean of 8-day Max Temp, Aug 29 (C)",
        title = "Lemhi River Longitudinal Temp Profile")
-lemh_long_temp_pro  
+lemh_long_temp_p  
+
+# calculate average redds per river km
+redd_rkm_sf = mra_redds %>%
+  filter(Waterbody == "Lemhi River") %>%
+  dplyr::select(Waterbody, Species, SurveyYear, StartDate, Longitude, Latitude) %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  group_by(rkm, SurveyYear) %>%
+  summarise(n_redds = n()) %>%
+  ungroup() %>%
+  complete(rkm = 0:92, SurveyYear, fill = list(n_redds = 0)) %>%
+  dplyr::select(- geometry) %>%
+  group_by(rkm) %>%
+  summarise(mean_n_redds = mean(n_redds)) %>%
+  ungroup()
+
+# longitudinal temperature profile
+coeff = 0.2
+lemh_long_temp_redd_p = temp_rkm_sf %>%
+  left_join(redd_rkm_sf) %>%
+  ggplot(aes(x = rkm)) +
+  geom_bar(aes(y = mean_n_redds), stat = "identity", alpha = 0.5) +
+  geom_line(aes(y = mn_max_8d_tmp_d241 * coeff),
+            size = 1.5, colour = "midnightblue") +
+  scale_y_continuous(sec.axis = sec_axis(~./coeff, name = "temp", ylim = c(12,15)))
+lemh_long_temp_redd_p  
+  
+  geom_line(aes(y = mn_max_8d_tmp_d241),
+            size = 1.5, colour = "midnightblue") +
+  geom_smooth(aes(y = mn_max_8d_tmp_d241),
+              method = "loess", se = F) +
+  geom_bar(aes(y = mean_n_redds), stat = "identity", alpha = 0.5) +
+  scale_y_continuous(
+    name = "Temperature",
+    sec.axis = sec_axis(~.*coeff, name = "Redds")
+  ) +
+  theme_bw() +
+  labs(x = "River Kilometer", 
+       y = "Mean of 8-day Max Temp, Aug 29 (C)",
+       title = "Lemhi River Longitudinal Temp Profile")
+lemh_long_temp_redd_p
 
 # temp joined to rkm
 rkm_temp_sf = mra_rkm %>%
