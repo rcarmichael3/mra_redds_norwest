@@ -195,50 +195,43 @@ lemh_redd_rkm = mra_redds %>%
   group_by(rkm, SurveyYear) %>%
   summarise(n_redds = n()) %>%
   ungroup() %>%
-  complete(rkm = 0:91, SurveyYear, fill = list(n_redds = 0))
-
-  
-# calculate average redds per river km
-redd_rkm_sf = mra_redds %>%
-  filter(Waterbody == "Lemhi River") %>%
-  dplyr::select(Waterbody, Species, SurveyYear, StartDate, Longitude, Latitude) %>%
-  st_join(mra_rkm,
-          join = st_nearest_feature,
-          left = TRUE) %>%
-  group_by(rkm, SurveyYear) %>%
-  summarise(n_redds = n()) %>%
-  ungroup() %>%
-  complete(rkm = 0:92, SurveyYear, fill = list(n_redds = 0)) %>%
+  complete(rkm = 0:91, SurveyYear, fill = list(n_redds = 0)) %>% # need to set max rkm here
   dplyr::select(- geometry) %>%
   group_by(rkm) %>%
-  summarise(mean_n_redds = mean(n_redds)) %>%
+  summarise(mean_redds_km = mean(n_redds)) %>%
   ungroup()
 
-# longitudinal temperature profile
-coeff = 2.2
-lemh_long_temp_redd_p = temp_rkm_sf %>%
-  left_join(redd_rkm_sf) %>%
+# longitudinal temperature profile, with redd densities
+coeff = 2.2 # for data transformation for secondary y-axis
+lemh_temp_rkm_sf %>%
+  left_join(lemh_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
-  geom_bar(aes(y = mean_n_redds), stat = "identity", alpha = 0.5,
-           colour = "cornflowerblue", fill = "cornflowerblue") +
-  geom_line(aes(y = (mn_max_8d_tmp_d241 - 12) * coeff),
-            size = 1.2, colour = "midnightblue") +
+  geom_bar(aes(y = mean_redds_km), stat = "identity", alpha = 0.3,
+           fill = "steelblue4", colour = "steelblue4") +
+  geom_line(aes(y = (mn_max_8d_temp_d241 - 12) * coeff),
+            size = 1.1, colour = "black") +
+  geom_smooth(aes(y = (mn_max_8d_temp_d241 - 12) * coeff),
+              method = "loess",
+              se = F,
+              size = 1, colour = "red3") +
   scale_y_continuous(sec.axis = sec_axis(~./coeff + 12,
                                          name = "Mean of 8-day Max Temp, Aug 29 (C)")) +
-  theme_bw() +
-  labs(x = "River Kilometer", 
-       y = "Mean Redd Density (Redds/km)",
-       title = "Lemhi River Longitudinal Temp Profile")
-lemh_long_temp_redd_p  
-  
-# temp joined to rkm
-rkm_temp_sf = mra_rkm %>%
-  filter(River == "Lemhi River") %>%
-  st_join(salmon_mcnyset_sf,
-          join = st_nearest_feature,
-          left = TRUE) %>%
-  dplyr::select(watershed, rkm, year, variable, d241)
+  labs(x = "River Kilometer",
+       y = "Mean Redd Density (redds/km)",
+       title = "Lemhi River") +
+  theme_bw()
 
+# removing objects that begin with
+rm(list = ls(pattern = "^lemh_")) # might make sense to remove this later
+
+# temp joined to rkm
+# rkm_temp_sf = mra_rkm %>%
+#   filter(River == "Lemhi River") %>%
+#   st_join(salmon_mcnyset_sf,
+#           join = st_nearest_feature,
+#           left = TRUE) %>%
+#   dplyr::select(watershed, rkm, year, variable, d241)
+#
 # temperature map, point type
 # rkm_temp_p = rkm_temp_sf %>%
 #   ggplot(aes(colour = d241)) +
@@ -248,69 +241,61 @@ rkm_temp_sf = mra_rkm %>%
 #   labs(colour = "8-day Mean Temperature, Aug 29 (C)")
 # rkm_temp_p
 
-############################################
-##Joining temperature and rkm to redd data##
-redd_norw_rkm <- mra_redds %>%
-  st_join(mra_rkm, 
-          join = st_nearest_feature, 
-          left = TRUE) %>%
-  st_join(mra_norwest, 
-          join = st_nearest_feature, 
-          left = TRUE) 
+##################################################
+# ALL MRA WATERSHEDS, ANALYSIS AND VISUALIZATION #
+##################################################
 
-##Joining RKM to Temp data##
-norw_rkm <- mra_norwest %>%
-  st_join(mra_rkm, 
+# Joining redd, rkm, and norwest temp data
+redd_norw_rkm = mra_redds %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  st_join(mra_norwest,
           join = st_nearest_feature,
           left = TRUE)
 
-##Hist of norwest temps at spawning locations (hab use temp)##
-spwn_selection <- ggplot(redd_norw_rkm,aes(x = S36_201,
-                                 color = River, 
-                                 fill = River)) +
+# Joining rkm to norwest temp data
+norw_rkm = mra_norwest %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE)
+
+# Histogram of norwest temps at spawning locations
+spwn_selection_p = redd_norw_rkm %>%
+  ggplot(aes(x = S36_201,
+             color = River,
+             fill = River)) + # from Richie, presumably mean August temp?
   geom_histogram(alpha = 0.3, position = "dodge") +
+  # geom_density(alpha = 0.3) + # option for density plot instead
   theme_bw() +
-  labs(x = "Mean August Temperature",
-       y = "Count") 
+  labs(x = "Mean August Temp (C)",
+       y = "Frequency",
+       title = "Temperature at Redd Locations")
+spwn_selection_p
 
-spwn_selection
-
-spwn_geom_dens <- ggplot(redd_norw_rkm, 
-                    aes(x = S36_201, ##Which scenario to use?
-                        color = River, 
-                        fill = River)) +
+# plot of all available temps
+all_temps_p = mra_norwest %>%
+  ggplot(aes(x = S21_201,      # which scenario to use, not sure which this is?
+             color = GNIS_NA,
+             fill = GNIS_NA)) +
+  # geom_histogram(alpha = 0.3, position = "dodge") +
   geom_density(alpha = 0.3) +
   theme_bw() +
-  labs(x = "Mean August Temperature",
-       y = "Density")
+  labs(x = "Mean Aug Temp (C)", # not certain this label is correct
+       y = "Frequency/Density",
+       color = "River",
+       fill = "River",
+       title = "Norwest Temp Distributions")
+all_temps_p
 
-spwn_geom_dens
-
-##Plot of all available temps##
-alltemps_dens <- ggplot(mra_norwest, 
-                    aes(x = S21_201, ##Which scenario to use?
-                        color = GNIS_NA, 
-                        fill = GNIS_NA)) +
-  geom_density(alpha = 0.3) +
-  theme_bw() +
-  labs(x = "Mean August Temperature",
-       y = "Density")
-
-alltemps_dens
-
-##Plotting Temp/RKM and redd locations##
-ggplot(norw_rkm, 
-       aes(x = rkm, y = S36_201, group = GNIS_NA)) +
+# all long temp profiles
+all_long_temp_p = norw_rkm %>%
+  ggplot(aes(x = rkm,
+             y = S36_201,
+             group = GNIS_NA)) +
   geom_line(aes(color = GNIS_NA)) +
   theme_bw() +
   labs(x = "Mean August Temperature",
-       y = "River Kilometer")
-
-
-##Making plot for Lemhi only##
-Lem_redd_norw <- redd_norw_rkm %>%
-  filter(GNIS_NA == "Lemhi River")
-
-
-
-
+       y = "River Kilometer",
+       color = "River")
+all_long_temp_p
