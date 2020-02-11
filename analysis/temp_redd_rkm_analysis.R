@@ -203,19 +203,19 @@ lemh_redd_rkm = mra_redds %>%
 
 # longitudinal temperature profile, with redd densities
 coeff = 2.2 # for data transformation for secondary y-axis
-diff = 12
+sec_x_0 = 12
 lemh_temp_rkm_sf %>%
   left_join(lemh_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
   geom_bar(aes(y = mean_redds_km), stat = "identity", alpha = 0.3,
            fill = "steelblue4", colour = "steelblue4") +
-  geom_line(aes(y = (mn_max_8d_temp_d241 - diff) * coeff),
+  geom_line(aes(y = (mn_max_8d_temp_d241 - sec_x_0) * coeff),
             size = 1.1, colour = "black") +
-  geom_smooth(aes(y = (mn_max_8d_temp_d241 - diff) * coeff),
+  geom_smooth(aes(y = (mn_max_8d_temp_d241 - sec_x_0) * coeff),
               method = "loess",
               se = F,
               size = 1, colour = "red3") +
-  scale_y_continuous(sec.axis = sec_axis(~./coeff + diff,
+  scale_y_continuous(sec.axis = sec_axis(~./coeff + sec_x_0,
                                          name = "Mean of 8-day Max Temp, Aug 29 (C)")) +
   labs(x = "River Kilometer",
        y = "Mean Redd Density (redds/km)",
@@ -323,19 +323,19 @@ pahs_redd_rkm = mra_redds %>%
 
 # longitudinal temperature profile, with redd densities
 coeff = 2.5 # for data transformation for secondary y-axis
-diff = 11
+sec_x_0 = 11
 pahs_temp_rkm_sf %>%
   left_join(pahs_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
   geom_bar(aes(y = mean_redds_km), stat = "identity", alpha = 0.3,
            fill = "steelblue4", colour = "steelblue4") +
-  geom_line(aes(y = (mn_max_8d_temp_d241 - diff) * coeff),
+  geom_line(aes(y = (mn_max_8d_temp_d241 - sec_x_0) * coeff),
             size = 1.1, colour = "black") +
-  geom_smooth(aes(y = (mn_max_8d_temp_d241 - diff) * coeff),
+  geom_smooth(aes(y = (mn_max_8d_temp_d241 - sec_x_0) * coeff),
               method = "loess",
               se = F,
               size = 1, colour = "red3") +
-  scale_y_continuous(sec.axis = sec_axis(~./coeff + diff,
+  scale_y_continuous(sec.axis = sec_axis(~./coeff + sec_x_0,
                                          name = "Mean of 8-day Max Temp, Aug 29 (C)")) +
   labs(x = "River Kilometer",
        y = "Mean Redd Density (redds/km)",
@@ -344,6 +344,113 @@ pahs_temp_rkm_sf %>%
 
 # removing objects that begin with
 rm(list = ls(pattern = "^pahs_")) # might make sense to remove this later
+
+#################################################
+# UPPER SALMON RIVER ANALYSIS AND VISUALIZATION #
+#################################################
+upsa_temp_rkm_sf = mra_mcnyset %>%
+  filter(watershed == "Upper Salmon") %>%
+  dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  dplyr::select(- River) %>%
+  arrange(rkm) %>%
+  group_by(rkm) %>%
+  summarise(mn_max_8d_temp_d241 = mean(d241))
+
+# map with McNyset Aug 29 modeled temps
+upsa_temp_rkm_map = upsa_temp_rkm_sf %>%
+  ggplot(aes(colour = mn_max_8d_temp_d241)) +
+  scale_colour_distiller(palette = "Spectral") +
+  geom_sf(size = 1.3) +
+  coord_sf(crs = 4326, # changing the coord_sf to widen the map
+           xlim = c(-114.96, -114.65),
+           expand = T) +
+  theme_bw() +
+  labs(title = "Upper Salmon River",
+       colour = "Mean of 8-day Max Temps\nAug 29 (C)") +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0))
+upsa_temp_rkm_map
+
+# the above, but add redds
+# what is the easiest way to remove redds in the below plot that are x distance
+# away from the mra_mcnyset line?
+upsa_temp_rkm_redds_map = upsa_temp_rkm_sf %>%
+  ggplot() +
+  geom_sf(aes(color = mn_max_8d_temp_d241),
+          size = 4) +
+  scale_colour_distiller(palette = "Spectral") +
+  geom_sf(data = mra_redds %>%
+            filter(Waterbody == "Salmon River"),
+          size = 1,
+          shape = 1) +
+  #position = position_nudge(x = 20000, y = 20000)) +
+  # geom_sf_label(data = mra_redds %>%
+  #                 filter(Waterbody == "Lemhi River"),
+  #               label = '',
+  #               nudge_x = -5000,
+  #               size = 0.01,
+  #               label.size = 0.3) +
+  theme_bw() +
+  labs(title = "Salmon River",
+       colour = "Mean of 8-day Max Temps\nAug 29 (C)") +
+  theme(axis.title = element_blank())
+upsa_temp_rkm_redds_map
+
+# basic longitudinal temperature profile
+upsa_temp_rkm_sf %>%
+  ggplot() +
+  geom_line(aes(x = rkm, y = mn_max_8d_temp_d241),
+            size = 1.3) +
+  geom_smooth(aes(x = rkm, y = mn_max_8d_temp_d241),
+              method = "loess", se = F) +
+  theme_bw() +
+  scale_x_continuous(breaks = seq(0, 60, by = 5)) +
+  labs(x = "River Kilometer",
+       y = "Mean of 8-day Max Temps\nAug 29 (C)",
+       title = "Pahsimeroi River Longitudinal Temp Profile")
+
+# calculate average redds per rkm
+upsa_redd_rkm = mra_redds %>%
+  filter(Waterbody == "Salmon River") %>%
+  dplyr::select(Waterbody, Species, SurveyYear, StartDate, Longitude, Latitude) %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  filter(rkm <= 56) %>%
+  group_by(rkm, SurveyYear) %>%
+  summarise(n_redds = n()) %>%
+  ungroup() %>%
+  complete(rkm = 0:56, SurveyYear, fill = list(n_redds = 0)) %>% # need to set max rkm here
+  dplyr::select(- geometry) %>%
+  group_by(rkm) %>%
+  summarise(mean_redds_km = mean(n_redds)) %>%
+  ungroup()
+
+# longitudinal temperature profile, with redd densities
+coeff = 14 # for data transformation for secondary y-axis
+sec_x_0 = 12.5
+upsa_temp_rkm_sf %>%
+  left_join(upsa_redd_rkm) %>%
+  ggplot(aes(x = rkm)) +
+  geom_bar(aes(y = mean_redds_km), stat = "identity", alpha = 0.3,
+           fill = "steelblue4", colour = "steelblue4") +
+  geom_line(aes(y = (mn_max_8d_temp_d241 - sec_x_0) * coeff),
+            size = 1.1, colour = "black") +
+  geom_smooth(aes(y = (mn_max_8d_temp_d241 - sec_x_0) * coeff),
+              method = "loess",
+              se = F,
+              size = 1, colour = "red3") +
+  scale_y_continuous(sec.axis = sec_axis(~./coeff + sec_x_0,
+                                         name = "Mean of 8-day Max Temp, Aug 29 (C)")) +
+  labs(x = "River Kilometer",
+       y = "Mean Redd Density (redds/km)",
+       title = "Upper Salmon River") +
+  theme_bw()
+
+# removing objects that begin with
+rm(list = ls(pattern = "^upsa_")) # might make sense to remove this later
 
 ##################################################
 # ALL MRA WATERSHEDS, ANALYSIS AND VISUALIZATION #
