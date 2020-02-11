@@ -405,6 +405,35 @@ norw_rkm %>%
        y = "Mean August Temp",
        color = "River")
 
+# grab some threshold values
+chnk_spw_opt_low = mra_threshold %>%
+  filter(species == "chinook",
+         life_stage == "spawning",
+         threshhold == "optimum_low") %>%
+  dplyr::select(temp_c) %>%
+  as.numeric()
+
+chnk_spw_opt_high = mra_threshold %>%
+  filter(species == "chinook",
+         life_stage == "spawning",
+         threshhold == "optimum_high") %>%
+  dplyr::select(temp_c) %>%
+  as.numeric()
+
+chnk_sum_juv_opt_low = mra_threshold %>%
+  filter(species == "chinook",
+         life_stage == "summer_parr",
+         threshhold == "optimum_low") %>%
+  dplyr::select(temp_c) %>%
+  as.numeric()
+
+chnk_sum_juv_opt_high = mra_threshold %>%
+  filter(species == "chinook",
+         life_stage == "summer_parr",
+         threshhold == "optimum_high") %>%
+  dplyr::select(temp_c) %>%
+  as.numeric()
+
 # plot all August long temp profiles, add temp thresholds for summer lifestages
 norw_rkm %>%
   filter((GNIS_NA == "Lemhi River") |
@@ -418,6 +447,18 @@ norw_rkm %>%
               se = F) +
   scale_x_continuous(breaks = seq(0, 90, by = 5)) +
   scale_y_continuous(breaks = seq(0, 20, by = 2)) +
+  # optimum spawning temps
+  geom_ribbon(aes(ymin = chnk_spw_opt_low,
+                  ymax = chnk_spw_opt_high),
+              fill = "orange",
+              alpha = 0.2) +
+  # optimum summer juvenile rearing temps
+  geom_ribbon(aes(ymin = chnk_sum_juv_opt_low,
+                  ymax = chnk_sum_juv_opt_high),
+              fill = "blue",
+              alpha = 0.2) +
+  # geom_hline(yintercept = chnk_spw_opt_low:chnk_spw_opt_high,
+  #            alpha = 0.5) +
   theme_bw() +
   labs(x = "River Kilometer",
        y = "Mean August Temp",
@@ -425,4 +466,4 @@ norw_rkm %>%
        title = "Mean August Temperature Profile (NorWeST)")
 
 # cleaning up
-rm(norw_rkm, redd_norw_rkm)
+#rm(norw_rkm, redd_norw_rkm)
