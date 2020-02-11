@@ -12,9 +12,9 @@
 library(dplyr)
 library(sf)
 library(raster)
-# library(sp)
 library(ggplot2)
 library(tidyverse)
+library(readxl)
 
 ########################
 # RIVER KILOMETER DATA #
@@ -120,6 +120,11 @@ mra_norwest = lemh_norw %>%
 
 # clean up the previous sf norwest temp objects
 rm(lemh_norw, pahs_norw, upsa_norw)
+
+##############################
+# LIFE STAGE TEMP THRESHOLDS #
+##############################
+mra_threshold = read_xlsx("data/temperature/carter_2005_temp_thresholds.xlsx")
 
 #-----------------------------------------------
 # END DATA PREP
@@ -472,7 +477,7 @@ norw_rkm = mra_norwest %>%
           left = TRUE)
 
 # Histogram of norwest temps at spawning locations
-spwn_selection_p = redd_norw_rkm %>%
+redd_norw_rkm %>%
   ggplot(aes(x = S36_201,
              color = River,
              fill = River)) + # from Richie, presumably mean August temp?
@@ -482,10 +487,9 @@ spwn_selection_p = redd_norw_rkm %>%
   labs(x = "Mean August Temp (C)",
        y = "Frequency",
        title = "Temperature at Redd Locations")
-spwn_selection_p
 
 # plot of all available temps
-all_temps_p = mra_norwest %>%
+mra_norwest %>%
   ggplot(aes(x = S21_201,      # which scenario to use, not sure which this is?
              color = GNIS_NA,
              fill = GNIS_NA)) +
@@ -497,10 +501,9 @@ all_temps_p = mra_norwest %>%
        color = "River",
        fill = "River",
        title = "Norwest Temp Distributions")
-all_temps_p
 
 # all long temp profiles
-all_long_temp_p = norw_rkm %>%
+norw_rkm %>%
   ggplot(aes(x = rkm,
              y = S36_201,
              group = GNIS_NA)) +
@@ -509,4 +512,5 @@ all_long_temp_p = norw_rkm %>%
   labs(x = "Mean August Temperature",
        y = "River Kilometer",
        color = "River")
-all_long_temp_p
+
+rm(norw_rkm, redd_norw_rkm)
