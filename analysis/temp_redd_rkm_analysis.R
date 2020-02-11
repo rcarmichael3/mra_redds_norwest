@@ -124,71 +124,80 @@ rm(lemh_norw, pahs_norw, upsa_norw)
 #-----------------------------------------------
 # END DATA PREP
 
-###############################
-# Join temp data and rkm data #
-###############################
-
-
-#################
-# START W/ LEMHI
-# rkm joined to temp
-temp_rkm_sf = mra_mcnyset %>%
-  dplyr::select(watershed, year, variable, RCAID, d241) %>%
+##########################################
+# LEMHI RIVER ANALYSIS AND VISUALIZATION #
+##########################################
+lemh_temp_rkm_sf = mra_mcnyset %>%
   filter(watershed == "Lemhi") %>%
+  dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
   st_join(mra_rkm,
           join = st_nearest_feature,
           left = TRUE) %>%
   dplyr::select(- River) %>%
-  arrange(watershed, rkm) %>%
+  arrange(rkm) %>%
   group_by(rkm) %>%
-  summarise(mn_max_8d_tmp_d241 = mean(d241)) %>%
-  filter(!rkm == "92") # seems to be an errant estimate at confluence with Salmon
+  summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
+  filter(!rkm == "92") # there was an odd model estimate at the confluence with Salmon R.
 
-# temperature map, line type
-temp_rkm_map = temp_rkm_sf %>%
-  ggplot(aes(colour = mn_max_8d_tmp_d241)) +
+# map with McNyset Aug 29 modeled temps
+lemh_temp_rkm_map = lemh_temp_rkm_sf %>%
+  ggplot(aes(colour = mn_max_8d_temp_d241)) +
   scale_colour_distiller(palette = "Spectral") +
-  geom_sf() +
+  geom_sf(size = 1.3) +
   theme_bw() +
   labs(title = "Lemhi River",
-       colour = "Mean of 8-day Max Temp, Aug 29 (C)")
-temp_rkm_map
+       colour = "Mean of 8-day Max Temps\nAug 29 (C)")
+lemh_temp_rkm_map
 
-# temperature map, line type, add redds
-temp_rkm_redd_map = temp_rkm_sf %>%
+# the above, but add redds
+lemh_temp_rkm_redds_map = lemh_temp_rkm_sf %>%
   ggplot() +
-  geom_sf(aes(colour = mn_max_8d_tmp_d241),
-          lwd = 2) +
+  geom_sf(aes(color = mn_max_8d_temp_d241),
+          size = 4) +
   scale_colour_distiller(palette = "Spectral") +
-  # geom_sf(data = mra_redds %>%
-  #           filter(Waterbody == "Lemhi River"),
-  #         size = 1,
-  #         shape = 1,
-  #         position = position_nudge(x = 20000, y = 20000)) +
-  geom_sf_label(data = mra_redds %>%
+  geom_sf(data = mra_redds %>%
             filter(Waterbody == "Lemhi River"),
-            label = '',
-            nudge_x = 5000,
-            size = 0.1,
-            label.size = 3) +
+          size = 1,
+          shape = 1) +
+          #position = position_nudge(x = 20000, y = 20000)) +
+  # geom_sf_label(data = mra_redds %>%
+  #                 filter(Waterbody == "Lemhi River"),
+  #               label = '',
+  #               nudge_x = -5000,
+  #               size = 0.01,
+  #               label.size = 0.3) +
   theme_bw() +
   labs(title = "Lemhi River",
-       colour = "Mean of 8-day Max Temp, Aug 29 (C)")
-temp_rkm_redd_map  
+       colour = "Mean of 8-day Max Temps\nAug 29 (C)") +
+  theme(axis.title = element_blank())
+lemh_temp_rkm_redds_map
 
-# longitudinal temperature profile
-lemh_long_temp_p = temp_rkm_sf %>%
+# basic longitudinal temperature profile
+lemh_temp_rkm_sf %>%
   ggplot() +
-  geom_line(aes(x = rkm, y = mn_max_8d_tmp_d241), 
-            size = 1.5, colour = "midnightblue") +
-  geom_smooth(aes(x = rkm, y = mn_max_8d_tmp_d241),
+  geom_line(aes(x = rkm, y = mn_max_8d_temp_d241),
+            size = 1.3) +
+  geom_smooth(aes(x = rkm, y = mn_max_8d_temp_d241),
               method = "loess", se = F) +
   theme_bw() +
-  labs(x = "River Kilometer", 
-       y = "Mean of 8-day Max Temp, Aug 29 (C)",
+  scale_x_continuous(breaks = seq(0, 91, by = 5)) +
+  labs(x = "River Kilometer",
+       y = "Mean of 8-day Max Temps\nAug 29 (C)",
        title = "Lemhi River Longitudinal Temp Profile")
-lemh_long_temp_p  
 
+# calculate average redds per rkm
+lemh_redd_rkm = mra_redds %>%
+  filter(Waterbody == "Lemhi River") %>%
+  dplyr::select(Waterbody, Species, SurveyYear, StartDate, Longitude, Latitude) %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  group_by(rkm, SurveyYear) %>%
+  summarise(n_redds = n()) %>%
+  ungroup() %>%
+  complete(rkm = 0:91, SurveyYear, fill = list(n_redds = 0))
+
+  
 # calculate average redds per river km
 redd_rkm_sf = mra_redds %>%
   filter(Waterbody == "Lemhi River") %>%
