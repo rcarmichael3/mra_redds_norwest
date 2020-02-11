@@ -509,8 +509,28 @@ norw_rkm %>%
              group = GNIS_NA)) +
   geom_line(aes(color = GNIS_NA)) +
   theme_bw() +
-  labs(x = "Mean August Temperature",
-       y = "River Kilometer",
+  labs(x = "River Kilometer",
+       y = "Mean August Temp",
        color = "River")
 
+# plot all August long temp profiles, add temp thresholds for summer lifestages
+norw_rkm %>%
+  filter((GNIS_NA == "Lemhi River") |
+           (GNIS_NA == "Pahsimeroi River") |
+           (GNIS_NA == "Salmon River" & rkm < 57)) %>%
+  ggplot(aes(x = rkm,
+             y = S21_201)) +
+  geom_line(aes(color = GNIS_NA)) +
+  geom_smooth(aes(color = GNIS_NA),
+              method = "loess",
+              se = F) +
+  scale_x_continuous(breaks = seq(0, 90, by = 5)) +
+  scale_y_continuous(breaks = seq(0, 20, by = 2)) +
+  theme_bw() +
+  labs(x = "River Kilometer",
+       y = "Mean August Temp",
+       color = "Watershed",
+       title = "Mean August Temperature Profile (NorWeST)")
+
+# cleaning up
 rm(norw_rkm, redd_norw_rkm)
