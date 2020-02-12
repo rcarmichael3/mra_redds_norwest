@@ -42,7 +42,9 @@ temp_rkm = mra_mcnyset %>%
   arrange(watershed, rkm, year) %>%
   group_by(watershed, rkm) %>%
   #summarise_at(vars(starts_with("d")), funs(mean))
-  summarise_at(vars(starts_with("d")), list(mean))
+  summarise_at(vars(starts_with("d")), list(mean)) %>%
+  ungroup() %>%
+  mutate(watershed = recode(watershed, `Upper Salmon` = "Upper_Salmon"))
 
 ################################################################################
 # WATERSHED, SPECIES, LIFE STAGE LONGITUDINAL TEMP PROFILES WITH LS THRESHOLDS #
@@ -151,15 +153,16 @@ wtsds = c("Lemhi", "Pahsimeroi", "Upper Salmon")
 spcs  = c("chinook", "steelhead")
 lss   = c("adult_holding", "spawning", "incubation", "emergence",
           "summer_parr", "winter_presmolt", "spring_smolt")
-for(wtsd in wtsds) {
+
+for(wtsd in wtsds) { # start watershed loop
   
   # set rkms for watershed
   if(wtsd == "Lemhi")       { rkms = 0:91 }
   if(wtsd == "Pahsimeroi")  { rkms = 0:85 }
   if(wtsd == "Upper Salmon"){ rkms = 0:56 }
   
-  for(spc in spcs) {
-    for(ls in lss) {
+  for(spc in spcs) { # start species loop
+    for(ls in lss) { # start life stage loop
       
       # thresholds for single species x life_stage
       spc_ls_thresh = thresh_df %>%
@@ -209,7 +212,7 @@ for(wtsd in wtsds) {
       }
       
       # start watershed, species, life_stage plot
-      wtsd_spc_ls_p = spc_ls_wtsd_temps %>%
+      ls_p = spc_ls_wtsd_temps %>%
         ggplot(aes(x = rkm)) +
         # longitudinal temp profile
         geom_line(aes(y = mean_c), colour = "grey40") +
@@ -242,25 +245,24 @@ for(wtsd in wtsds) {
              title = paste0(ls, ", ", date_span)) +
         theme(plot.title = element_text(hjust = 0.01, vjust = -8, size = 12))
       
-      assign(paste0("wtsd_spc_", ls, "_p"), wtsd_spc_ls_p)
+      assign(paste0(wtsd,"_",spc,"_",ls,"_p"), ls_p)
     
     } #  END LIFE STAGE LOOP
-    
+
     # EACH WATERSHED X SPECIES (6 combinations)
-    wtsd_spc_p = ggarrange(plotlist = list(wtsd_spc_adult_holding_p,
-                                           wtsd_spc_spawning_p,
-                                           wtsd_spc_incubation_p,
-                                           wtsd_spc_emergence_p,
-                                           wtsd_spc_summer_parr_p,
-                                           wtsd_spc_winter_presmolt_p,
-                                           wtsd_spc_spring_smolt_p),
-                           nrow = 3,
-                           ncol = 3)
-    assign(paste0(wtsd, "_", spc, "_p"), wtsd_spc_p) 
+    wtsd_spc_ls_p = ggarrange(plotlist = list(get(paste0(wtsd,"_",spc,"_","adult_holding_p")),
+                                              get(paste0(wtsd,"_",spc,"_","spawning_p")),
+                                              get(paste0(wtsd,"_",spc,"_","incubation_p")),
+                                              get(paste0(wtsd,"_",spc,"_","emergence_p")),
+                                              get(paste0(wtsd,"_",spc,"_","summer_parr_p")),
+                                              get(paste0(wtsd,"_",spc,"_","winter_presmolt_p")),
+                                              get(paste0(wtsd,"_",spc,"_","spring_smolt_p"))),
+                              nrow = 3,
+                              ncol = 3)
+    assign(paste0(wtsd,"_",spc,"_p"), wtsd_spc_ls_p) 
 
   } # END SPECIES LOOP
+  
 } # END WATERSHED LOOP 
-
-
 
 
