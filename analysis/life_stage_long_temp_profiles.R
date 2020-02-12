@@ -41,14 +41,16 @@ temp_rkm = mra_mcnyset %>%
   #summarise_at(vars(starts_with("d")), funs(mean))
   summarise_at(vars(starts_with("d")), list(mean))
 
-###############
-# LEMHI RIVER #
-###############
+################################################################################
+# WATERSHED, SPECIES, LIFE STAGE LONGITUDINAL TEMP PROFILES WITH LS THRESHOLDS #
+################################################################################
+# add mins and max to plot
+
 # set params for a single plot
 wtsd = "Lemhi"
 rkms = 0:91
 spc  = "chinook"
-ls   = "adult_holding"
+ls   = "spring_smolt"
 
 # thresholds for single species x life_stage
 spc_ls_thresh = thresh_df %>%
@@ -56,8 +58,18 @@ spc_ls_thresh = thresh_df %>%
          life_stage == ls)
 
 # get names of julians within mra_mcnyset that occur within species x life_stage
-spc_ls_julians = as.vector(paste0("d",unique(spc_ls_thresh$start_julian):unique(spc_ls_thresh$end_julian)))
-spc_ls_julians = spc_ls_julians[spc_ls_julians %in% colnames(mra_mcnyset)]
+if(unique(spc_ls_thresh$start_julian) < unique(spc_ls_thresh$end_julian)) {
+  spc_ls_julians = unique(spc_ls_thresh$start_julian):unique(spc_ls_thresh$end_julian)
+}
+if(unique(spc_ls_thresh$start_julian) > unique(spc_ls_thresh$end_julian)) {
+  spc_ls_julians = c(unique(spc_ls_thresh$start_julian):365,
+                     0:unique(spc_ls_thresh$end_julian))
+}
+spc_ls_julians = paste0("d", str_pad(spc_ls_julians, 3, pad = "0"))
+
+# old method
+# spc_ls_julians = as.vector(paste0("d",unique(spc_ls_thresh$start_julian):unique(spc_ls_thresh$end_julian)))
+# spc_ls_julians = spc_ls_julians[spc_ls_julians %in% colnames(mra_mcnyset)]
 
 # trim temp_rkm for watershed and columns in spc_ls_julians
 spc_ls_wtsd_temps = temp_rkm %>%
@@ -86,7 +98,7 @@ date_span = paste0(str_sub(unique(spc_ls_thresh$start_date), start = -5),
 
 # extract thresholds and assign as object
 for(i in 1:nrow(spc_ls_thresh)) {
-  assign(as.character(spc_ls_thresh[i,"threshhold"]),
+  assign(as.character(spc_ls_thresh[i,"threshold"]),
          as.numeric(spc_ls_thresh[i,"temp_c"]))
 }
 
@@ -94,7 +106,7 @@ for(i in 1:nrow(spc_ls_thresh)) {
 wtsd_spc_ls_p = spc_ls_wtsd_temps %>%
   ggplot(aes(x = rkm)) +
   # longitudinal temp profile
-  geom_line(aes(y = mean_c), colour = "grey70") +
+  geom_line(aes(y = mean_c), colour = "grey60") +
   geom_smooth(aes(y = mean_c),
               method = "loess",
               colour = "black",
@@ -124,5 +136,3 @@ wtsd_spc_ls_p = spc_ls_wtsd_temps %>%
 wtsd_spc_ls_p
 
 ## END WATERSHED, SPECIES, LIFE STAGE PLOT
-
-         
