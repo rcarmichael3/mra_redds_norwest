@@ -175,10 +175,7 @@ for(wtsd in wtsds) {
                            0:unique(spc_ls_thresh$end_julian))
       }
       spc_ls_julians = paste0("d", str_pad(spc_ls_julians, 3, pad = "0"))
-      
-      # old method
-      # spc_ls_julians = as.vector(paste0("d",unique(spc_ls_thresh$start_julian):unique(spc_ls_thresh$end_julian)))
-      # spc_ls_julians = spc_ls_julians[spc_ls_julians %in% colnames(mra_mcnyset)]
+      spc_ls_julians = spc_ls_julians[spc_ls_julians %in% colnames(mra_mcnyset)]
       
       # trim temp_rkm for watershed and columns in spc_ls_julians
       spc_ls_wtsd_temps = temp_rkm %>%
@@ -245,7 +242,7 @@ for(wtsd in wtsds) {
              title = paste0(ls, ", ", date_span)) +
         theme(plot.title = element_text(hjust = 0.01, vjust = -8, size = 12))
       
-      assign(paste0("wtsd_spc_", ls, "_p") ,wtsd_spc_ls_p)
+      assign(paste0("wtsd_spc_", ls, "_p"), wtsd_spc_ls_p)
     
     } #  END LIFE STAGE LOOP
     
