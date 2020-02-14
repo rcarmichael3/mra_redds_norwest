@@ -69,6 +69,12 @@ lemh_temp_rkm_redds_map = lemh_temp_rkm_sf %>%
   theme(axis.title = element_blank())
 lemh_temp_rkm_redds_map
 
+# the above, but facetted by year
+lemh_temp_rkm_redds_yr_map = lemh_temp_rkm_redds_map +
+  facet_wrap(~ SurveyYear) +
+  theme(legend.position = 'bottom')
+lemh_temp_rkm_redds_yr_map
+
 # basic longitudinal temperature profile
 lemh_temp_rkm_sf %>%
   ggplot() +
@@ -189,6 +195,13 @@ pahs_temp_rkm_redds_map
 # ha, note that all the redds appear to be low, presumably below the weir
 # I suspect these are largely hatchery redds
 
+# the above, but facetted by year
+pahs_temp_rkm_redds_yr_map = pahs_temp_rkm_redds_map +
+  facet_wrap(~ SurveyYear) +
+  theme(legend.position = 'bottom')
+pahs_temp_rkm_redds_yr_map
+
+
 # basic longitudinal temperature profile
 pahs_temp_rkm_sf %>%
   ggplot() +
@@ -279,7 +292,9 @@ upsa_temp_rkm_redds_map = upsa_temp_rkm_sf %>%
           size = 4) +
   scale_colour_distiller(palette = "Spectral") +
   geom_sf(data = mra_redds %>%
-            filter(Waterbody == "Salmon River"),
+            filter(Waterbody == "Salmon River") %>%
+            st_intersection(upsa_temp_rkm_sf %>%
+                              st_make_grid(n = 1)),
           size = 1,
           shape = 1) +
   #position = position_nudge(x = 20000, y = 20000)) +
@@ -292,8 +307,18 @@ upsa_temp_rkm_redds_map = upsa_temp_rkm_sf %>%
   theme_bw() +
   labs(title = "Salmon River",
        colour = "Mean of 8-day Max Temps\nAug 29 (C)") +
-  theme(axis.title = element_blank())
+  theme(axis.title = element_blank(),
+        axis.text.x = element_text(angle = 45,
+                                   hjust = 1))
 upsa_temp_rkm_redds_map
+
+# the above, but facetted by year
+upsa_temp_rkm_redds_yr_map = upsa_temp_rkm_redds_map +
+  facet_wrap(~ SurveyYear) +
+  theme(legend.position = 'bottom',
+        axis.text = element_text(size = 5))
+upsa_temp_rkm_redds_yr_map
+
 
 # basic longitudinal temperature profile
 upsa_temp_rkm_sf %>%
@@ -306,11 +331,13 @@ upsa_temp_rkm_sf %>%
   scale_x_continuous(breaks = seq(0, 60, by = 5)) +
   labs(x = "River Kilometer",
        y = "Mean of 8-day Max Temps\nAug 29 (C)",
-       title = "Pahsimeroi River Longitudinal Temp Profile")
+       title = "Upper Salmon River Longitudinal Temp Profile")
 
 # calculate average redds per rkm
 upsa_redd_rkm = mra_redds %>%
   filter(Waterbody == "Salmon River") %>%
+  st_intersection(upsa_temp_rkm_sf %>%
+                    st_make_grid(n = 1)) %>%
   dplyr::select(Waterbody, Species, SurveyYear, StartDate, Longitude, Latitude) %>%
   st_join(mra_rkm,
           join = st_nearest_feature,
@@ -368,6 +395,39 @@ norw_rkm = mra_norwest %>%
           join = st_nearest_feature,
           left = TRUE)
 
+
+# these versions drop the section of the mainstem Salmon river
+# Joining redd, rkm, and norwest temp data
+redd_norw_rkm = mra_redds %>%
+  filter(Waterbody == "Salmon River") %>%
+  st_intersection(upsa_temp_rkm_sf %>%
+                    st_make_grid(n = 1)) %>%
+  rbind(mra_redds %>%
+          filter(Waterbody != "Salmon River")) %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  st_join(mra_norwest %>%
+            filter(GNIS_NA == 'Salmon River') %>%
+            st_intersection(upsa_temp_rkm_sf %>%
+                              st_make_grid(n = 1)) %>%
+            rbind(mra_norwest %>%
+                    filter(GNIS_NA != "Salmon River")),
+          join = st_nearest_feature,
+          left = TRUE)
+
+# Joining rkm to norwest temp data
+norw_rkm = mra_norwest %>%
+  filter(GNIS_NA == 'Salmon River') %>%
+  st_intersection(upsa_temp_rkm_sf %>%
+                    st_make_grid(n = 1)) %>%
+  rbind(mra_norwest %>%
+          filter(GNIS_NA != "Salmon River")) %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE)
+
+
 # Histogram of norwest temps at spawning locations
 redd_norw_rkm %>%
   ggplot(aes(x = S36_201,
@@ -409,28 +469,28 @@ norw_rkm %>%
 chnk_spw_opt_low = mra_threshold %>%
   filter(species == "chinook",
          life_stage == "spawning",
-         threshhold == "optimum_low") %>%
+         threshold == "optimum_low") %>%
   dplyr::select(temp_c) %>%
   as.numeric()
 
 chnk_spw_opt_high = mra_threshold %>%
   filter(species == "chinook",
          life_stage == "spawning",
-         threshhold == "optimum_high") %>%
+         threshold == "optimum_high") %>%
   dplyr::select(temp_c) %>%
   as.numeric()
 
 chnk_sum_juv_opt_low = mra_threshold %>%
   filter(species == "chinook",
          life_stage == "summer_parr",
-         threshhold == "optimum_low") %>%
+         threshold == "optimum_low") %>%
   dplyr::select(temp_c) %>%
   as.numeric()
 
 chnk_sum_juv_opt_high = mra_threshold %>%
   filter(species == "chinook",
          life_stage == "summer_parr",
-         threshhold == "optimum_high") %>%
+         threshold == "optimum_high") %>%
   dplyr::select(temp_c) %>%
   as.numeric()
 
