@@ -165,5 +165,7 @@ for(wtsd in unique(all_data$watershed)) {
     # save plots
     ggsave(filename = paste0("figures/", wtsd, "_", spc, "_ls_long_temp_plots_v2.pdf"),
            all_ls_p)
-    
+  }
+}
+
     
