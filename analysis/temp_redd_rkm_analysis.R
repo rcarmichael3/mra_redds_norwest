@@ -3,7 +3,9 @@
 # for analysis
 #
 # Created by: Richie Carmichael
+#
 # Created date: January 2020
+#   Modified by: Mike A. and Kevin S.   
 #
 # Calculating redd densities for display in MRA reports along with 
 # NorWest temperature data
