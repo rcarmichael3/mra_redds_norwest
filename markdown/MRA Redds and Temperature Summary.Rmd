@@ -1,0 +1,95 @@
+---
+title: "Redd Distribution and Stream Temperature Evaluations for Multiple Reach Assessments"
+author:
+  - name: Mike Ackerman
+    affiliation: Biomark, Inc.
+    email: mike.ackerman@merck.com
+  - name: Richie Carmichael
+    affiliation: Biomark, Inc.
+    email: richard.carmichael@merck.com
+  - name: Kevin See
+    affiliation: Biomark, Inc.
+    email: kevin.see@merck.com
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  bookdown::html_document2:
+    theme: flatly
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    fig_height: 6
+    fig_width: 8
+    pandoc_args:
+    - --lua-filter=../templates/scholarly-metadata.lua
+    - --lua-filter=../templates/author-info-blocks.lua
+    - --lua-filter=../templates/pagebreak.lua
+  bookdown::word_document2: 
+    fig_caption: yes
+    fig_height: 4
+    fig_width: 7
+    toc: yes
+    pandoc_args:
+    - --lua-filter=../templates/scholarly-metadata.lua
+    - --lua-filter=../templates/author-info-blocks.lua
+    - --lua-filter=../templates/pagebreak.lua
+    reference_docx: "../templates/ReportTemplate.docx"
+  bookdown::pdf_document2:
+    pandoc_args:
+    - --lua-filter=../templates/scholarly-metadata.lua
+    - --lua-filter=../templates/author-info-blocks2.lua
+    - --lua-filter=../templates/pagebreak.lua
+    fig_height: 6
+    fig_width: 8
+    includes:
+      in_header: "../templates/header_ABS.tex"
+institute:
+- biomark: Biomark, Inc.
+csl: "../templates/american-fisheries-society.csl"
+---
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+# load knitr for markdown
+library(knitr)
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+options(knitr.kable.NA = '-')
+options(knitr.table.format = "pandoc")
+
+## load necessary libraryies
+library(tidyverse)
+library(dplyr)
+library(sf)
+library(raster)
+library(ggplot2)
+library(readxl)
+library(lubridate)
+library(stringr)
+library(ggpubr)
+```
+
+# Introduction
+
+Introduction text here...
+
+## Objectives
+
+Brief objectives...
+
+# Methods
+
+Method text here...
+
+# Results
+
+Put some results, numbers, and plots here...
+
+# Discussion
+
+Do some serious hand-waving here...
+
+## Conclusions
+
+The hard-hitting stuff...
+
+# Literature Cited
+
+Stuff we cite, but nobody actually ever reads...
