@@ -114,7 +114,7 @@ Not surprisingly, problematic stream temperature condtions were primarily identi
 
 ## Objectives
 
-In this document, we document the location and distribution of Chinook salmon spawning in the target watersheds and compare redd density summaries to available modeled temperature results. The goal is to make available the distribution of contemporary core spawning areas, examine temperatures in those areas, and examine historic spawning areas, in a spatially explicit (i.e., by river kilometer [rkm]) framework.
+We document the location and distribution of Chinook salmon spawning in the target watersheds and compare redd density summaries to available modeled temperature results. The goal is to make available the distribution of contemporary core spawning areas, examine temperatures in those areas, and examine historic spawning areas, in a spatially explicit (i.e., by river kilometer [rkm]) framework.
 
 Further, we want to examine stream temperatures during critical life stages for Chinook salmon and steelhead in each of the three watersheds (Lemhi, Pahsimeroi, Upper Salmon) and how they compare to temperature thresholds for those species from Carter (2005) in a spatially-explicit manner. By doing this evaluation by rkm, we can identify particular reaches within the watersheds where stream temperatures may be limiting, particularly during winter (juvenile winter rearing) and summer (adult holding, spawning, parr rearing) months identified as problematic in the IRA (Idaho OSC Team 2019).
 
