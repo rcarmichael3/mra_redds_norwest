@@ -149,11 +149,95 @@ temp_rkm = mra_mcnyset %>%
 round_any = function(x, accuracy, f=round){f(x/ accuracy) * accuracy}
 ```
 
+```{r wtsd-spc-ls-analysis}
+# set parameters to create df for wtsd-spc-ls longitudinal temp profile plots
+wtsds = c("Lemhi", "Pahsimeroi", "Upper_Salmon")
+spcs  = c("chinook", "steelhead")
+lss   = c("adult_holding", "spawning", "incubation", "emergence",
+          "summer_parr", "winter_presmolt", "spring_smolt")
+
+# create blank data frame
+all_data = NULL
+
+# begin watershed x species x life stage loops
+for(wtsd in wtsds) {
+  for(spc in spcs) {
+    for(ls in lss) {
+    
+      # start by setting rkms for the given watershed
+      if(wtsd == "Lemhi")       { rkms = 0:91 }
+      if(wtsd == "Pahsimeroi")  { rkms = 0:85 }
+      if(wtsd == "Upper Salmon"){ rkms = 0:56 }
+      
+      # now, grab the thresholds for a given species x life stage
+      spc_ls_thresh = thresh_df %>%
+        filter(species == spc,
+               life_stage == ls)
+      
+      # next, get the names of julians within temp_rkm that occur within species x life stage
+      if(unique(spc_ls_thresh$start_julian) < unique(spc_ls_thresh$end_julian)) {
+        spc_ls_julians = unique(spc_ls_thresh$start_julian):unique(spc_ls_thresh$end_julian)
+      }
+      if(unique(spc_ls_thresh$start_julian) > unique(spc_ls_thresh$end_julian)) {
+        spc_ls_julians = c(unique(spc_ls_thresh$start_julian):365,
+                           0:unique(spc_ls_thresh$end_julian))
+      }
+      spc_ls_julians = paste0("d", str_pad(spc_ls_julians, 3, pad = "0"))
+      spc_ls_julians = spc_ls_julians[spc_ls_julians %in% colnames(temp_rkm)]
+      
+      # extract date_span out of life stage thresholds
+      date_span = paste0(str_sub(unique(spc_ls_thresh$start_date), start = -5),
+                         " to ", 
+                         str_sub(unique(spc_ls_thresh$end_date), start = -5))
+      
+      # extract thresholds and assign as object
+      for(i in 1:nrow(spc_ls_thresh)) {
+        assign(as.character(spc_ls_thresh[i,"threshold"]),
+               as.numeric(spc_ls_thresh[i,"temp_c"]))
+      }
+      
+      # trim temp_rkm for watershed and columns in spc_ls_julians
+      df = temp_rkm %>%
+        st_drop_geometry() %>%
+        filter(watershed == wtsd) %>%
+        filter(rkm %in% rkms) %>%
+        dplyr::select(rkm, one_of(spc_ls_julians)) %>%
+        gather(key = "julian", value = "temp_c", c(-rkm)) %>%
+        group_by(rkm) %>%
+        summarise(mean_c = mean(temp_c),
+                  min_c = min(temp_c),
+                  max_c = max(temp_c),
+                  sd_c = sd(temp_c),
+                  n = n()) %>%
+        ungroup() %>%
+        mutate(watershed = wtsd,
+               species = spc,
+               life_stage = ls,
+               min_th = minimum,
+               opt_l_th = optimum_low,
+               opt_h_th = optimum_high,
+               max_th = maximum,
+               acute_th = acute,
+               ls_span = date_span) %>%
+        mutate(min_obs_temp = min(min_c),
+               max_obs_temp = max(max_c),
+               max_rkm = max(rkm)) %>%
+        mutate(label = paste(paste0(str_to_title(str_replace(life_stage, "_", " "))),
+                             str_replace_all(date_span, "-", "/"),
+                             sep = "\n"))
+    
+      all_data = rbind(all_data, df)
+  
+    } # end life stage loop
+  } # end species loop
+} # end watershed loop
+```
+
 # Results
 
 ## Lemhi River
 
-### Redds
+### Chinook Salmon Redds
 
 ```{r lemh-data}
 # filter, clean lemhi temp data and attach rkm data
@@ -239,11 +323,64 @@ lemh_temp_rkm_sf %>%
 rm(list = ls(pattern = "^lemh_")) # might make sense to remove this later
 ```
 
+```{r lt-plot-func}
+lt_plot = function(data, wtsd, spc) {
+  lt_p = data %>%
+    filter(watershed == wtsd,
+           species == spc) %>%
+    ggplot(aes(x = rkm)) +
+    # longitudinal temp profile
+    geom_line(aes(y = mean_c), colour = "grey40") +
+    geom_smooth(aes(y = mean_c),
+                method = "loess",
+                colour = "black",
+                se = F) +
+    geom_line(aes(y = min_c), colour = "black", linetype = "dashed") +
+    geom_line(aes(y = max_c), colour = "black", linetype = "dashed") +
+    # min temp threshold
+    geom_hline(aes(yintercept = min_th),
+               colour = "blue", linetype = "longdash") +
+    # optimum temp range
+    geom_ribbon(aes(ymin = opt_l_th,
+                    ymax = opt_h_th),
+                fill = "green2",
+                alpha = 0.2) +
+    # max temp threshold
+    geom_hline(aes(yintercept = max_th),
+               colour = "red", linetype = "longdash") +
+    # acute temp threshold
+    geom_hline(aes(yintercept = acute_th),
+               colour = "darkred") +
+    # set axis breaks and limits
+    scale_x_continuous(breaks = seq(0, 150, by = 5)) +
+    scale_y_continuous(breaks = seq(0, 25, by = 2.5)) +
+    # some formatting
+    facet_wrap(~ label) +
+    theme_bw() +
+    labs(x = "River Kilometer",
+         y = "Temperature (°C)",
+         title = paste0(str_to_title(spc), ", ", wtsd))
+  lt_p
+}
+```
+
 ### Life Stage Specific Longitudinal Temperature Profiles
+
+#### Chinook salmon
+
+```{r lemh-chnk-lt-plot}
+lt_plot(data = all_data, wtsd = "Lemhi", spc = "chinook")
+```
+
+#### Steelhead
+
+```{r lemh-sthd-lt-plot}
+lt_plot(data = all_data, wtsd = "Lemhi", spc = "steelhead")
+```
 
 ## Pahsimeroi River
 
-### Redds
+### Chinook Salmon Redds
 
 ```{r pahs-data}
 # filter, clean pahsimeroi temp data and attach rkm data
@@ -332,9 +469,21 @@ rm(list = ls(pattern = "^pahs_")) # might make sense to remove this later
 
 ### Life Stage Specific Longitudinal Temperature Profiles
 
+#### Chinook salmon
+
+```{r pahs-chnk-lt-plot}
+lt_plot(data = all_data, wtsd = "Pahsimeroi", spc = "chinook")
+```
+
+#### Steelhead
+
+```{r pahs-sthd-lt-plot}
+lt_plot(data = all_data, wtsd = "Pahsimeroi", spc = "steelhead")
+```
+
 ## Upper Salmon River
 
-### Redds
+### Chinook Salmon Redds
 
 ```{r upsa-data}
 # filter, clean upper salmon temp data and attach rkm data
@@ -429,6 +578,18 @@ rm(list = ls(pattern = "^upsa_")) # might make sense to remove this later
 ```
 
 ### Life Stage Specific Longitudinal Temperature Profiles
+
+#### Chinook salmon
+
+```{r upsa-chnk-lt-plot}
+lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "chinook")
+```
+
+#### Steelhead
+
+```{r upsa-sthd-lt-plot}
+lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "steelhead")
+```
 
 # Discussion
 
