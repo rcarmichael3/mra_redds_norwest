@@ -280,7 +280,7 @@ lemh_temp_rkm_redds_yr_map = lemh_temp_rkm_redds_map +
 lemh_temp_rkm_redds_yr_map
 ```
 
-```{r lemh-redds-n-temps}
+```{r lemh-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Lemhi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Lemhi River and occurs at the Highway 29 bridge near Leadore and the confluence of Eighteenmile and Texas Creeks. River kilometer 91 is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown."}
 # calculate average redds per rkm
 lemh_redd_rkm = mra_redds %>%
   filter(Waterbody == "Lemhi River") %>%
@@ -312,6 +312,7 @@ lemh_temp_rkm_sf %>%
               method = "loess",
               se = F,
               size = 1, colour = "red3") +
+  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
   scale_y_continuous(sec.axis = sec_axis(~./coeff + sec_y_0,
                                          name = "Mean of 8-day Max Temp, Aug 29 (°C)")) +
   labs(x = "River Kilometer",
@@ -368,13 +369,13 @@ lt_plot = function(data, wtsd, spc) {
 
 #### Chinook salmon
 
-```{r lemh-chnk-lt-plot}
+```{r lemh-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Salmon River faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Lemhi", spc = "chinook")
 ```
 
 #### Steelhead
 
-```{r lemh-sthd-lt-plot}
+```{r lemh-sthd-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Salmon River faceted by steelhead life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Lemhi", spc = "steelhead")
 ```
 
@@ -425,7 +426,7 @@ pahs_temp_rkm_redds_yr_map = pahs_temp_rkm_redds_map +
 pahs_temp_rkm_redds_yr_map
 ```
 
-```{r pahs-redds-n-temps}
+```{r pahs-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Pahsimeroi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Pahsimeroi River and occurs at the confluence of the West Fork and East Fork Pahsimeroi River. River kilometer 85, the downstream extent is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown."}
 # calculate average redds per rkm
 pahs_redd_rkm = mra_redds %>%
   filter(Waterbody == "Pahsimeroi River") %>%
@@ -456,6 +457,7 @@ pahs_temp_rkm_sf %>%
               method = "loess",
               se = F,
               size = 1, colour = "red3") +
+  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
   scale_y_continuous(sec.axis = sec_axis(~./coeff + sec_y_0,
                                          name = "Mean of 8-day Max Temp, Aug 29 (°C)")) +
   labs(x = "River Kilometer",
@@ -471,13 +473,13 @@ rm(list = ls(pattern = "^pahs_")) # might make sense to remove this later
 
 #### Chinook salmon
 
-```{r pahs-chnk-lt-plot}
+```{r pahs-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Pahsimeroi River faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Pahsimeroi", spc = "chinook")
 ```
 
 #### Steelhead
 
-```{r pahs-sthd-lt-plot}
+```{r pahs-sthd-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Pahsimeroi River faceted by steelhead life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Pahsimeroi", spc = "steelhead")
 ```
 
@@ -532,7 +534,7 @@ upsa_temp_rkm_redds_yr_map = upsa_temp_rkm_redds_map +
 upsa_temp_rkm_redds_yr_map
 ```
 
-```{r upsa-redds-n-temps}
+```{r upsa-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Upper Salmon River (above Redfish Lake Creek) averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Upper Salmon River at its source. River kilometer 56, the downstream extent, is at its confluence with Redfish Lake Creek. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown."}
 # calculate average redds per rkm
 upsa_redd_rkm = mra_redds %>%
   filter(Waterbody == "Salmon River") %>%
@@ -566,6 +568,7 @@ upsa_temp_rkm_sf %>%
               method = "loess",
               se = F,
               size = 1, colour = "red3") +
+  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
   scale_y_continuous(sec.axis = sec_axis(~./coeff + sec_y_0,
                                          name = "Mean of 8-day Max Temp, Aug 29 (°C)")) +
   labs(x = "River Kilometer",
@@ -581,13 +584,13 @@ rm(list = ls(pattern = "^upsa_")) # might make sense to remove this later
 
 #### Chinook salmon
 
-```{r upsa-chnk-lt-plot}
+```{r upsa-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Upper Salmon River (above Redfish Lake Creek) faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "chinook")
 ```
 
 #### Steelhead
 
-```{r upsa-sthd-lt-plot}
+```{r upsa-sthd-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Upper Salmon River (above Redfish Lake Creek) faceted by steelhead life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "steelhead")
 ```
 
