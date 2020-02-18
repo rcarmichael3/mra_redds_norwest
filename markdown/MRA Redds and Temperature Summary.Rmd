@@ -72,13 +72,51 @@ The Bureau of Reclamation (BOR), Idaho Governor's Office of Species Conservation
 
 In the IRA, we determined that available spawning habitat (i.e., redd capacity) was not limiting in any of the target watersheds (Lemhi River, Pahsimeroi River, and upper Salmon River above Redfish Lake Creek) for either Chinook salmon or steelhead. Available spawning capacity was estimated as the total number of redds that each watershed could support and was estimated using quantile regression forest (QRF; Idaho OSC Team 2019, Appendix B) models and the number of redds required to support contemporary escapement or escapement to support recovery goals (e.g., minimum abundance thresholds [MAT]) was estimated using a generalized capacity model (Idaho OSC Team 2019, Appendix C). It was instead concluded that juvenile rearing habitat, during both summer and winter months, was likely limiting productivity of Chinook salmon and steelhead populations in target watersheds. Additionally, life stages not evaluated there (e.g., incubation, fry) may contribute to limited productivity in these populations. With that said, we acknowledge that future habitat actions in the target watershed should attempt to take a "do no harm" approach and minimize any negative impacts to available spawning habitat, especially in existing core spawning areas. But we believe that any appropriate actions to improve juvenile rearing will likely cause minimal or no negative impacts to spawning habitat, especially if habitat complexity (e.g., increased pool frequency with following pool-tail, riffle sequences) is considered. Additionally, if was stated in the IRA that *"providing sufficient adult holding (prespawn) habitat should be considered and would be provided by increased habitat complexity"*. Within the Lemhi, Pahsimeroi, and Upper Salmon watersheds, Chinook salmon may hold in reaches downstream or near the spawning areas in late-July and August prior to the spawning season, a time where high stream temperatures can be problematic. And finally, the Idaho OSC Team found that *"spawning habitat historically occurred farther upstream than current core ares, especially in the Upper Salmon River headwaters, effectively reducing the area currently available for rearing (i.e., area downstream of spawning).* One of the goals of this evaluation is to document the location and distribution of spawning redds in the target watersheds for recent years in which redd surveys were completed and data are available. Redd survey data were made available by the Idaho Department of Fish and Game (IDFG). Here, modeled stream temperatures available from McNyset et al. (2015) are compared to recent redd density data to determine whether temperatures are appropriate or perhaps problematic in those areas; we can also consider areas that may have historically been used for spawning.  
 
+In Appendix A of the IRA report (Idaho OSC Team 2019), we used a combination of modeled temperature predictions (McNyset et al. 2015) and life-stage-specific temperature thresholds (Carter 2005) to evaluate whether current water temperatures might limit the ability of spring-summer run Chinook and summer run steelhead to use available habitat in the Lemhi, Pahsimeroi, and Upper Salmon watersheds. In addition, a simple warming scenario was presented (added 3&deg;C to contemporary modeled temperatures) to describe potential increases in stream temperature expected to result from climate change to assess whether the implementation of restoration actions to reduce temperatures may be necessary to aid recovery of Chinook salmon and steelhead in the watersheds. The following are the key findings from that temperature and climate change assessment:
 
+<!--
+I just spewed the below findings out using text from the IRA. Might be nice to summarize this more concisely either as like a table or just simplified under a single header.
+-->
+
+## Lemhi River
+
+### Chinook salmon
+
+Under current conditions, winter and early-spring modeled stream temperatures were below optimum values during egg incubation, fry emergence, juvenile winter rearing, and spring smolt emigration; this can potentially slow incubation and emergence resulting in fry emergence occurring during sub-optimal timing. Low temperatures during winter months can also cease presmolt growth or condition during winter months. Modeled summer temperatures exceed optimum values at times, potentially increasing stress during adult holding and elevating food requirements for summer parr. Under an assumed 3&deg;C increase scenario, winter and spring condtions improved somewhat, but conditions worsen for summer parr and spawners with temperatures exceeding maximum thresholds for Chinook salmon in excess of 50% of the time.
+
+### Steelhead
+
+Under current conditions, winter and early-spring modeled water temperatures were below optimum values for juvenile rearing and spring emigration, likely reducing juvenile growth and condition factors during winter months. Under the assumed 3&deg;C increase scenario, conditions improved for winter and spring life stages; however, conditions worsed during late-spring and summer with temperatures exceeding maximum temperature thresholds for summer juvenile rearing across much of the watershed.
+
+## Pahsimeroi
+
+### Chinook salmon
+
+Under current conditions, stream temperatures in the Pahsimeroi River are rarely below optimum values. However, spring and summer temperatures tend to exceed optimum values for extended periods, potentially increasing stress on adults during staging (holding) and spawning. High spring and summer temperatures can also increase stress during incubation and emergence and increase food requirements for spring smolts and summer parr, potentially decreasing body condition. Under the assumed 3&deg;C increase scenario, conditions worsened for all summer life stages, with water temperatures above optimum for a majority of the time and potentially surpassing acute (lethal) temperatures for holding and spawning adults.
+
+### Steelhead
+
+Although current modeled water temperatures in the Pahsimeroi River seem to be okay for most life stages evaluated, conditons worsen under the 3&deg;C increase scenario with temperatures above optimum, maximum, or acute thresholds during spawining, incubation, emergence, spring smolt emigration, and summer parr rearing life stages.
+
+## Upper Salmon
+
+### Chinook salmon
+
+Under current conditions, modeled stream temperatures are generally within optimum temperatures for each of the life stages evaluated; however, under the 3&deg;C increase scenario conditions again worsen for summer life stages including adult holding and spawning and parr rearing.
+
+### Steelhead
+
+Similar to Chinook salmon, modeled stream temperatures are generally within optimum temperatures for each of the life stages evaluated under current conditions. And again, most notably, under the 3&deg;C increase scenario, summer water temperatures potentially increase to above maximum during portions of spawning and summer parr rearing.
+
+## Overall Life Stage Specific Temperature Findings from IRA
+
+Not surprisingly, problematic stream temperature condtions were primarily identified during the extreme seasons, winter and summer. During winter and under current conditons, stream temperatures are often below optimum temperatures for juvenile winter rearing. This can results in no growth or loss of body condition prior to the spring emigration season. During summer, modeled stream temperatures were often above optimum or maximum thresholds for adult holding and spawning or summer rearing. Summer conditions worsened under the simple climate change scenario in all cases. High temperatures for adults can result in prespawn mortality or increased stress during spawning behavior. High temperatures for parr increases food requirements which increases energy expenditure to search for food and decreased growth and body conditon, potentially leading to decreased survival during fall or winter months, or forcing individuals to emigrate downstream in search for more optimal fall and winter rearing.
 
 ## Objectives
 
-<!--
-Evaluate the composite suitability of geomorphic reaches in the upper Lemhi, lower Lemhi, lower Pahsimeroi, and upper Salmon (Decker Flat) valley segments based on modeled depth and velocity raster available from Light Detection and Ranging (LiDAR) models available from those areas. Composite suitability is evaluated for both Chinook salmon and steelhead and for adult spawning and juvenile rearing at various discharge scenarios (see Table \@ref(tab:scenarios-tab)). The proportion of each geomorphic reach classified as simple, mixed, or complex is also provided for reference.
--->
+In this document, we document the location and distribution of Chinook salmon spawning in the target watersheds and compare redd density summaries to available modeled temperature results. The goal is to make available the distribution of contemporary core spawning areas, examine temperatures in those areas, and examine historic spawning areas, in a spatially explicit (i.e., by river kilometer [rkm]) framework.
+
+Further, we want to examine stream temperatures during critical life stages for Chinook salmon and steelhead in each of the three watersheds (Lemhi, Pahsimeroi, Upper Salmon) and how they compare to temperature thresholds for those species from Carter (2005) in a spatially-explicit manner. By doing this evaluation by rkm, we can identify particular reaches within the watersheds where stream temperatures may be limiting, particularly during winter (juvenile winter rearing) and summer (adult holding, spawning, parr rearing) months identified as problematic in the IRA (Idaho OSC Team 2019).
 
 # Methods
 
@@ -99,3 +137,5 @@ The hard-hitting stuff...
 # Literature Cited
 
 Idaho OSC Team (Idaho Governor’s Office of Species Conservation and partners). 2019. Upper Salmon Subbasin Habitat Integrated Rehabilitation Assessment. Assessment prepared for and with the U.S. Department of the Interior, Bureau of Reclamation. June 2019. 625 pp.
+
+McNyset, K.M., C.J. Volk, and C.E. Jordan. 2015. Developing an effective model for predicting spatially and temporally continuous stream temperatures from remotely sensed land surface temperatures. Water. 7:6827-6846.
