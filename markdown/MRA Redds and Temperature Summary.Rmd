@@ -676,7 +676,7 @@ upsa_temp_rkm_sf %>%
               se = F,
               size = 1, colour = "red3") +
   scale_x_continuous(breaks = seq(0, 150, by = 5)) +
-  scale_y_continuous(breaks = seq(0, 10, by = 1),
+  scale_y_continuous(breaks = seq(0, 100, by = 5),
                      sec.axis = sec_axis(~./coeff + sec_y_0,
                                          name = "Mean of 8-day Max Temp, Aug 29 (°C)")) +
   labs(x = "River Kilometer",
