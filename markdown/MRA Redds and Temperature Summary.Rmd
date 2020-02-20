@@ -369,7 +369,7 @@ lemh_temp_rkm_sf = mra_mcnyset %>%
   filter(!rkm == "92") # an odd model estimate at confluence with Salmon R.
 ```
 
-Figure \@ref(fig:lemh-temp-redd-map) reference here...
+The distribution of Chinook salmon redd locations in the Lemhi River for years in which survey data were available, along with predictions of the mean of 8-day maximum temperatures for August 29 are shown in Figures \@ref(fig:lemh-temp-redd-map) and \@ref(fig:lemh-redd-map-by-year).
 
 ```{r lemh-temp-redd-map, fig.cap = "Map of Lemhi River showing modeled stream temperatures near the late summer spawning season for Chinook salmon and the distribution of redds (small, open black circles) available from redd surveys in recent years. Modeled temperatures are predictions for August 29 averaged across years where predictions are available."}
 # map lemhi summer temps with redd locations
@@ -389,8 +389,6 @@ lemh_temp_rkm_redds_map = lemh_temp_rkm_sf %>%
 lemh_temp_rkm_redds_map
 ```
 
-Figure \@ref(fig:lemh-redd-map-by-year) reference here...
-
 ```{r lemh-redd-map-by-year, fig.cap = "Same as figure above, except faceted by survey year to show years for which data are available and how the distribution of redds potentially changed."}
 # the above, but facetted by year
 lemh_temp_rkm_redds_yr_map = lemh_temp_rkm_redds_map +
@@ -400,7 +398,11 @@ lemh_temp_rkm_redds_yr_map = lemh_temp_rkm_redds_map +
 lemh_temp_rkm_redds_yr_map
 ```
 
-Figure \@ref(fig:lemh-redds-n-temps) reference here...
+Figure \@ref(fig:lemh-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available.
+
+<!-- 
+I have an issue I need to resolve with the below plot and the following similar plots for Pahsimeroi and Upper Salmon. I have code within them to add a geom_ribbon for the optimum temps and geom_hlines for the max and acute temps. However, they don't show when I add the limits argument to scale_y_continuous. If I remove that argument, the geom_ribbons and geom_hlines show; however, the secondary y-axis expands to include the full range of the thresholds, which makes the plot look terrible. Need to find a way to better control the limits of the y-axis while also displaying the threshold lines.
+-->
 
 ```{r lemh-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Lemhi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Lemhi River and occurs at the Highway 29 bridge near Leadore and the confluence of Eighteenmile and Texas Creeks. River kilometer 91 is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown."}
 # calculate average redds per rkm
@@ -422,7 +424,7 @@ lemh_redd_rkm = mra_redds %>%
 
 # longitudinal temperature profile, with redd densities
 coeff = 2.2  # for data transformation for secondary y-axis
-sec_y_0 = 12 # set origin of the y-axis
+sec_y_0 = 12 # set origin of the secondary y-axis
 lemh_temp_rkm_sf %>%
   left_join(lemh_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
@@ -434,8 +436,20 @@ lemh_temp_rkm_sf %>%
               method = "loess",
               se = F,
               size = 1, colour = "red3") +
+  # optimum temp range
+  geom_ribbon(aes(ymin = (7.2 - sec_y_0) * coeff,
+                  ymax = (14.5 - sec_y_0) * coeff),
+              fill = "green2",
+              alpha = 0.2) +
+  # max temp threshold
+  geom_hline(aes(yintercept = (18 - sec_y_0) * coeff),
+             colour = "red", linetype = "longdash") +
+  # acute temp threshold
+  geom_hline(aes(yintercept = (20 - sec_y_0) * coeff),
+             colour = "darkred") +
   scale_x_continuous(breaks = seq(0, 150, by = 5)) +
   scale_y_continuous(breaks = seq(0, 10, by = 1),
+                     limits = c(0, 7),
                      sec.axis = sec_axis(~./coeff + sec_y_0,
                                          name = "Mean of 8-day Max Temp, Aug 29 (°C)")) +
   labs(x = "River Kilometer",
@@ -484,7 +498,7 @@ pahs_temp_rkm_sf = mra_mcnyset %>%
   filter(!rkm == "86") # observation with an NA at confluence with Salmon R.
 ```
 
-Figure \@ref(fig:pahs-temp-redd-map) reference here...
+The distribution of Chinook salmon redd locations in the Pahsimeroi River for years in which survey data were available, along with predictions of the mean of 8-day maximum temperatures for August 29 are shown in Figures \@ref(fig:pahs-temp-redd-map) and \@ref(fig:pahs-redd-map-by-year).
 
 ```{r pahs-temp-redd-map, fig.cap = "Map of Pahsimeroi River showing modeled stream temperatures near the late summer spawning season for Chinook salmon and the distribution of redds (small, open black circles) available from redd surveys in recent years. Modeled temperatures are predictions for August 29 averaged across years where predictions are available."}
 # map pahs summer temps with redd locations
@@ -506,8 +520,6 @@ pahs_temp_rkm_redds_map
 # I suspect these are largely hatchery redds
 ```
 
-Figure \@ref(fig:pahs-redd-map-by-year) reference here...
-
 ```{r pahs-redd-map-by-year, fig.cap = "Same as figure above, except faceted by survey year to show years for which data are available and how the distribution of redds potentially changed."}
 # the above, but facetted by year
 pahs_temp_rkm_redds_yr_map = pahs_temp_rkm_redds_map +
@@ -517,7 +529,7 @@ pahs_temp_rkm_redds_yr_map = pahs_temp_rkm_redds_map +
 pahs_temp_rkm_redds_yr_map
 ```
 
-Figure \@ref(fig:pahs-redds-n-temps) reference here...
+Figure \@ref(fig:pahs-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available.
 
 ```{r pahs-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Pahsimeroi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Pahsimeroi River and occurs at the confluence of the West Fork and East Fork Pahsimeroi River. River kilometer 85, the downstream extent is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown."}
 # calculate average redds per rkm
@@ -550,8 +562,20 @@ pahs_temp_rkm_sf %>%
               method = "loess",
               se = F,
               size = 1, colour = "red3") +
-  scale_x_continuous(breaks = seq(0, 150, by = 10)) +
-  scale_y_continuous(breaks = seq(0, 10, by = 1),
+  # # optimum temp range
+  # geom_ribbon(aes(ymin = (7.2 - sec_y_0) * coeff,
+  #                 ymax = (14.5 - sec_y_0) * coeff),
+  #             fill = "green2",
+  #             alpha = 0.2) +
+  # # max temp threshold
+  # geom_hline(aes(yintercept = (18 - sec_y_0) * coeff),
+  #            colour = "red", linetype = "longdash") +
+  # # acute temp threshold
+  # geom_hline(aes(yintercept = (20 - sec_y_0) * coeff),
+  #            colour = "darkred") +
+  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
+  scale_y_continuous(breaks = seq(0, 20, by = 1),
+                     limits = c(0, 14),
                      sec.axis = sec_axis(~./coeff + sec_y_0,
                                          name = "Mean of 8-day Max Temp, Aug 29 (°C)")) +
   labs(x = "River Kilometer",
@@ -599,7 +623,7 @@ upsa_temp_rkm_sf = mra_mcnyset %>%
   summarise(mn_max_8d_temp_d241 = mean(d241))
 ```
 
-Figure \@ref(fig:upsa-temp-redd-map) reference here...
+The distribution of Chinook salmon redd locations in the Upper Salmon River (above Redfish Lake Creek) for years in which survey data were available, along with predictions of the mean of 8-day maximum temperatures for August 29 are shown in Figures \@ref(fig:upsa-temp-redd-map) and \@ref(fig:upsa-redd-map-by-year).
 
 ```{r upsa-temp-redd-map, fig.cap = "Map of Upper Salmon River (above Redfish Lake) showing modeled stream temperatures near the late summer spawning season for Chinook salmon and the distribution of redds (small, open black circles) available from redd surveys in recent years. Modeled temperatures are predictions for August 29 averaged across years where predictions are available."}
 # map upsa summer temps with redd locations
@@ -627,8 +651,6 @@ upsa_temp_rkm_redds_map = upsa_temp_rkm_sf %>%
 upsa_temp_rkm_redds_map
 ```
 
-Figure \@ref(fig:upsa-redd-map-by-year) reference here...
-
 ```{r upsa-redd-map-by-year, fig.cap = "Same as figure above, except faceted by survey year to show years for which data are available and how the distribution of redds potentially changed."}
 # the above, but facetted by year
 upsa_temp_rkm_redds_yr_map = upsa_temp_rkm_redds_map +
@@ -639,7 +661,7 @@ upsa_temp_rkm_redds_yr_map = upsa_temp_rkm_redds_map +
 upsa_temp_rkm_redds_yr_map
 ```
 
-Figure \@ref(fig:upsa-redds-n-temps) reference here...
+Figure \@ref(fig:upsa-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available.
 
 ```{r upsa-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Upper Salmon River (above Redfish Lake Creek) averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Upper Salmon River at its source. River kilometer 56, the downstream extent, is at its confluence with Redfish Lake Creek. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown."}
 # calculate average redds per rkm
@@ -675,8 +697,20 @@ upsa_temp_rkm_sf %>%
               method = "loess",
               se = F,
               size = 1, colour = "red3") +
+  # # optimum temp range
+  # geom_ribbon(aes(ymin = (7.2 - sec_y_0) * coeff,
+  #                 ymax = (14.5 - sec_y_0) * coeff),
+  #             fill = "green2",
+  #             alpha = 0.2) +
+  # # max temp threshold
+  # geom_hline(aes(yintercept = (18 - sec_y_0) * coeff),
+  #            colour = "red", linetype = "longdash") +
+  # # acute temp threshold
+  # geom_hline(aes(yintercept = (20 - sec_y_0) * coeff),
+  #            colour = "darkred") +
   scale_x_continuous(breaks = seq(0, 150, by = 5)) +
   scale_y_continuous(breaks = seq(0, 100, by = 5),
+                     limits = c(0, 57.5),
                      sec.axis = sec_axis(~./coeff + sec_y_0,
                                          name = "Mean of 8-day Max Temp, Aug 29 (°C)")) +
   labs(x = "River Kilometer",
@@ -708,11 +742,17 @@ lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "steelhead")
 
 # Discussion
 
-Do some serious hand-waving here...
+Still need to add some discussion...
+
+The main things that come to my (MA) mind:
+
+* Redd locations (i.e., the core spawning areas) in the Lemhi River do seem to occur where stream temperatures are appropriate or okay. Interesting. I'm wondering, does historic redd distribution information suggest redds lower in system if and when stream temps were cooler prior to so much irrigation during summer months? But it does seem that temperatures are okay in the current core spawning area.
+* On the contrary, redd distributions in the Pahsimeroi and Upper Salmon occur in areas where temps seem way too high. Couple things...redds are largely constrained to occur below the weirs. Those redds, too, are likely dominated by hatchery fish. Has the presence of a weir hindered the ability or encouraged wild fish to spawn low in the systems where stream temps are too high? And for those few wild redds that do occur below the weirs, they are probably dominated or overrun by hatchery redds. I wouldn't doubt if there's imposition of redds in those limited locations. In Pahsimeroi, I don't have a great sense for how much appropriate spawning areas there are above the weir, but at least some of the habitat Richie and I walked, particularly in Patterson Creek, seemed like decent spawning habitat that, at least according to this data, doesn't seem to be getting used.
+* Temperatures during the extreme seasons (mid-summer and mid-winter) do seem to be limiting. High summer temps likely cause stress for holding and spawning adults, potentially causing pre-spawn mortality or reduced fitness during spawning. And high temps likely increase 'metabolic stress' and food requirements for parr, also perhaps increasing stress and decreasing body condition prior to fall and spring. Does that encourage the presmolt life history? Further temperatures during the winter are too low for winter rearing, which isn't surprising, but can temperatures be mediated during these extreme seasons. It seems that hyporheic exchange may be key to moderating temps during the extreme seasons! More evidence to increase complexity, channel unit frequency, etc.
 
 ## Conclusions
 
-The hard-hitting stuff...
+The main takeaways...
 
 # Literature Cited
 
