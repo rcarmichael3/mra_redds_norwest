@@ -12,17 +12,8 @@ author:
     email: kevin.see@merck.com
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output:
-  bookdown::word_document2: 
-    fig_caption: yes
-    fig_height: 4
-    fig_width: 7
-    toc: yes
-    pandoc_args:
-    - --lua-filter=../templates/scholarly-metadata.lua
-    - --lua-filter=../templates/author-info-blocks.lua
-    - --lua-filter=../templates/pagebreak.lua
-    reference_docx: "../templates/ReportTemplate.docx"
   bookdown::html_document2:
+    smart: false
     theme: flatly
     toc: yes
     toc_depth: 3
@@ -33,6 +24,16 @@ output:
     - --lua-filter=../templates/scholarly-metadata.lua
     - --lua-filter=../templates/author-info-blocks.lua
     - --lua-filter=../templates/pagebreak.lua
+  bookdown::word_document2:
+    fig_caption: yes
+    fig_height: 4
+    fig_width: 7
+    toc: yes
+    pandoc_args:
+    - --lua-filter=../templates/scholarly-metadata.lua
+    - --lua-filter=../templates/author-info-blocks.lua
+    - --lua-filter=../templates/pagebreak.lua
+    reference_docx: "../templates/ReportTemplate.docx"
   bookdown::pdf_document2:
     pandoc_args:
     - --lua-filter=../templates/scholarly-metadata.lua
@@ -408,7 +409,6 @@ I have an issue I need to resolve with the below plot and the following similar 
 # calculate average redds per rkm
 lemh_redd_rkm = mra_redds %>%
   filter(Waterbody == "Lemhi River") %>%
-  filter(Waterbody == "Lemhi River") %>%
   dplyr::select(Waterbody, Species, SurveyYear, StartDate, Longitude, Latitude) %>%
   st_join(mra_rkm,
           join = st_nearest_feature,
@@ -423,39 +423,70 @@ lemh_redd_rkm = mra_redds %>%
   ungroup()
 
 # longitudinal temperature profile, with redd densities
-coeff = 2.2  # for data transformation for secondary y-axis
-sec_y_0 = 12 # set origin of the secondary y-axis
+coeff = 2
+#sec_y_0 = y
 lemh_temp_rkm_sf %>%
   left_join(lemh_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
-  geom_bar(aes(y = mean_redds_km), stat = "identity", alpha = 0.3,
-           fill = "steelblue4", colour = "steelblue4") +
-  geom_line(aes(y = (mn_max_8d_temp_d241 - sec_y_0) * coeff),
-            size = 1.1, colour = "black") +
-  geom_smooth(aes(y = (mn_max_8d_temp_d241 - sec_y_0) * coeff),
+  geom_line(aes(y = mn_max_8d_temp_d241), 
+            size = 1.1, 
+            color = "black") +
+  geom_smooth(aes(y = mn_max_8d_temp_d241),
               method = "loess",
               se = F,
-              size = 1, colour = "red3") +
-  # optimum temp range
-  geom_ribbon(aes(ymin = (7.2 - sec_y_0) * coeff,
-                  ymax = (14.5 - sec_y_0) * coeff),
+              size = 1,
+              color = "red3") +
+  # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, ymax = 14.5),
               fill = "green2",
               alpha = 0.2) +
-  # max temp threshold
-  geom_hline(aes(yintercept = (18 - sec_y_0) * coeff),
-             colour = "red", linetype = "longdash") +
-  # acute temp threshold
-  geom_hline(aes(yintercept = (20 - sec_y_0) * coeff),
-             colour = "darkred") +
+  geom_bar(aes(y = mean_redds_km * coeff),
+           stat = "identity",
+           alpha = 0.3,
+           fill = "steelblue4",
+           color = "steelblue4") +
   scale_x_continuous(breaks = seq(0, 150, by = 5)) +
-  scale_y_continuous(breaks = seq(0, 10, by = 1),
-                     limits = c(0, 7),
-                     sec.axis = sec_axis(~./coeff + sec_y_0,
-                                         name = "Mean of 8-day Max Temp, Aug 29 (°C)")) +
+  scale_y_continuous(breaks = seq(0, 20, by = 1)) +
+  coord_cartesian(ylim = c(12, 15)) +
   labs(x = "River Kilometer",
-       y = "Mean Redd Density (redds/km)",
+       y = "Mean of 8-day Max Temp, Aug 29 (°C)",
        title = "Lemhi River") +
   theme_bw()
+
+# longitudinal temperature profile, with redd densities
+# coeff = 2.2  # for data transformation for secondary y-axis
+# sec_y_0 = 12 # set origin of the secondary y-axis
+# lemh_temp_rkm_sf %>%
+#   left_join(lemh_redd_rkm) %>%
+#   ggplot(aes(x = rkm)) +
+#   geom_bar(aes(y = mean_redds_km), stat = "identity", alpha = 0.3,
+#            fill = "steelblue4", colour = "steelblue4") +
+#   geom_line(aes(y = (mn_max_8d_temp_d241 - sec_y_0) * coeff),
+#             size = 1.1, colour = "black") +
+#   geom_smooth(aes(y = (mn_max_8d_temp_d241 - sec_y_0) * coeff),
+#               method = "loess",
+#               se = F,
+#               size = 1, colour = "red3") +
+#   # optimum temp range
+#   geom_ribbon(aes(ymin = (7.2 - sec_y_0) * coeff,
+#                   ymax = (14.5 - sec_y_0) * coeff),
+#               fill = "green2",
+#               alpha = 0.2) +
+#   # max temp threshold
+#   geom_hline(aes(yintercept = (18 - sec_y_0) * coeff),
+#              colour = "red", linetype = "longdash") +
+#   # acute temp threshold
+#   geom_hline(aes(yintercept = (20 - sec_y_0) * coeff),
+#              colour = "darkred") +
+#   scale_x_continuous(breaks = seq(0, 150, by = 5)) +
+#   scale_y_continuous(breaks = seq(0, 10, by = 1),
+#                      limits = c(0, 7),
+#                      sec.axis = sec_axis(~./coeff + sec_y_0,
+#                                          name = "Mean of 8-day Max Temp, Aug 29 (°C)")) +
+#   labs(x = "River Kilometer",
+#        y = "Mean Redd Density (redds/km)",
+#        title = "Lemhi River") +
+#   theme_bw()
 
 # removing objects that begin with
 rm(list = ls(pattern = "^lemh_")) # might make sense to remove this later
