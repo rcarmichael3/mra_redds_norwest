@@ -505,6 +505,12 @@ sec_y_0 = 12
 lemh_temp_rkm_sf %>%
   full_join(lemh_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
+    # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
   geom_line(aes(y = mn_max_8d_temp_d241), 
             size = 1.1, 
             color = "black") +
@@ -513,11 +519,6 @@ lemh_temp_rkm_sf %>%
               se = F,
               size = 1,
               color = "red3") +
-  # optimum spawning temp range
-  geom_ribbon(aes(ymin = 7.2, 
-                  ymax = 14.5),
-              fill = "green2",
-              alpha = 0.2) +
   # other thresholds
   geom_hline(yintercept = c(18, 20),
              linetype = 2) +
@@ -560,6 +561,12 @@ aug_temp_rkm %>%
   full_join(lemh_redd_rkm) %>%
   # filter(rkm %in% rkm[duplicated(rkm)])
   ggplot(aes(x = rkm)) +
+  # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
   geom_line(aes(y = aug_temp), 
             size = 1.1, 
             color = "black") +
@@ -568,11 +575,6 @@ aug_temp_rkm %>%
               se = F,
               size = 1,
               color = "red3") +
-  # optimum spawning temp range
-  geom_ribbon(aes(ymin = 7.2, 
-                  ymax = 14.5),
-              fill = "green2",
-              alpha = 0.2) +
   # other thresholds
   geom_hline(yintercept = c(18, 20),
              linetype = 2) +
@@ -703,6 +705,12 @@ sec_y_0 = 11
 pahs_temp_rkm_sf %>%
   full_join(pahs_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
+  # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
   geom_line(aes(y = mn_max_8d_temp_d241), 
             size = 1.1, 
             color = "black") +
@@ -711,11 +719,6 @@ pahs_temp_rkm_sf %>%
               se = F,
               size = 1,
               color = "red3") +
-  # optimum spawning temp range
-  geom_ribbon(aes(ymin = 7.2, 
-                  ymax = 14.5),
-              fill = "green2",
-              alpha = 0.2) +
   # other thresholds
   geom_hline(yintercept = c(18, 20),
              linetype = 2) +
@@ -757,6 +760,12 @@ aug_temp_rkm %>%
          scenario == 'S30') %>%
   full_join(pahs_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
+  # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
   geom_line(aes(y = aug_temp), 
             size = 1.1, 
             color = "black") +
@@ -765,11 +774,6 @@ aug_temp_rkm %>%
               se = F,
               size = 1,
               color = "red3") +
-  # optimum spawning temp range
-  geom_ribbon(aes(ymin = 7.2, 
-                  ymax = 14.5),
-              fill = "green2",
-              alpha = 0.2) +
   # other thresholds
   geom_hline(yintercept = c(18, 20),
              linetype = 2) +
@@ -912,6 +916,12 @@ sec_y_0 = 13
 upsa_temp_rkm_sf %>%
   full_join(upsa_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
+  # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
   geom_line(aes(y = mn_max_8d_temp_d241), 
             size = 1.1, 
             color = "black") +
@@ -920,11 +930,6 @@ upsa_temp_rkm_sf %>%
               se = F,
               size = 1,
               color = "red3") +
-  # optimum spawning temp range
-  geom_ribbon(aes(ymin = 7.2, 
-                  ymax = 14.5),
-              fill = "green2",
-              alpha = 0.2) +
   # other thresholds
   geom_hline(yintercept = c(18, 20),
              linetype = 2) +
@@ -968,6 +973,12 @@ aug_temp_rkm %>%
          rkm <= max(upsa_redd_rkm$rkm)) %>%
   full_join(upsa_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
+  # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
   geom_line(aes(y = aug_temp), 
             size = 1.1, 
             color = "black") +
@@ -976,11 +987,6 @@ aug_temp_rkm %>%
               se = F,
               size = 1,
               color = "red3") +
-  # optimum spawning temp range
-  geom_ribbon(aes(ymin = 7.2, 
-                  ymax = 14.5),
-              fill = "green2",
-              alpha = 0.2) +
   # other thresholds
   geom_hline(yintercept = c(18, 20),
              linetype = 2) +
