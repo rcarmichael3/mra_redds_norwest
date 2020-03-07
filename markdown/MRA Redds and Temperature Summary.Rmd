@@ -65,6 +65,8 @@ library(ggpubr)
 library(ggrepel)
 library(tidyverse)
 
+theme_set(theme_bw())
+
 ```
 
 ```{r lt-plot-func}
@@ -101,12 +103,13 @@ lt_plot = function(data, wtsd, spc) {
     scale_y_continuous(breaks = seq(0, 25, by = 2.5)) +
     # some formatting
     facet_wrap(~ label) +
-    theme_bw() +
+    
     labs(x = "River Kilometer",
          y = "Temperature (°C)",
          title = paste0(str_to_title(spc), ", ", wtsd))
   lt_p
 }
+
 ```
 
 # Introduction
@@ -270,7 +273,7 @@ Chinook salmon redd location data were provided to us by IDFG from redd surveys 
 
 <!--- Richie, you might have to help me explain the rkm dataset here -->
 
-River kilometers were defined on the stream network as points and were used to assign redd and temperature to specific river locations along the stream network. In each case, river kilometer (rkm) 0 was defined as the upstream extent of the mainstem river and, for the Lemhi and Pahsimeroi Rivers, the downstream extent was their confluence with the mainstem Salmon River. The downstream extend of the Upper Salmon River watershed was defined as the confluence of the mainstem Salmon River and Little Redfish Lake Creek. The following are rkm 0 for each of the watershed:
+River kilometers were defined on the stream network as points and were used to assign redd and temperature to specific river locations along the stream network. In each case, river kilometer (rkm) 0 was defined as the upstream extent of the mainstem river and, for the Lemhi and Pahsimeroi Rivers, the downstream extent was their confluence with the mainstem Salmon River. The downstream extend of the Upper Salmon River watershed was defined as the confluence of the mainstem Salmon River and Little Redfish Lake Creek. The following are rkm 0 for each of the watersheds:
 
 * Lemhi River: The confluence of Eighteenmile and Texas Creeks near the Highway 29 bridge in Leadore.
 * Pahsimeroi River: The confluence of the West Fork and East Fork Pahsimeroi River.
@@ -282,7 +285,7 @@ River kilometers were defined on the stream network as points and were used to a
 
 <!-- Kevin, help me out here if I didn't describe this right -->
 
-Spatially and temporally continuous predictions of stream temperatures were available for the three watersheds from a model described in McNyset et al. (2015).The models uses land surface temperautre (LST) data from the U.S. National Aeronautics and Space Administration's (NASA) Moderate Resolution Imaging Spectroradiometer (MODIS) satellite sensor to help extrapolate stream temperature from stream data loggers. The LST data are available daily at a resolution of 1 square kilometer and are summarized over an 8-day NASA "week". Model results were available for each of the watersheds for the following years:
+Spatially and temporally continuous predictions of stream temperatures were available for the three watersheds from a model described in McNyset et al. (2015). The model uses land surface temperautre (LST) data from the U.S. National Aeronautics and Space Administration's (NASA) Moderate Resolution Imaging Spectroradiometer (MODIS) satellite sensor to help extrapolate stream temperature from stream data loggers. The LST data are available daily at a resolution of 1 square kilometer and are summarized over an 8-day NASA "week". Model results were available for each of the watersheds for the following years:
 
 * Lemhi River: `r pull(unique(dplyr::select(st_drop_geometry(filter(mra_mcnyset, watershed == "Lemhi")), year)))`
 * Pahsimeroi River: `r pull(unique(dplyr::select(st_drop_geometry(filter(mra_mcnyset, watershed == "Pahsimeroi")), year)))`
@@ -296,7 +299,7 @@ Predictions were available at 8-day intervals and were calculated as the mean of
 
 <!-- I'll need Richie's help to describe the NorWeST dataset -->
 
-Additionally, stream temperature data were downloaded from the NorWeST webpage https://www.fs.fed.us/rm/boise/AWAE/projects/NorWeST.html and are described by Isaak et al. (2017). Briefly, the NorWeST page hosts various stream temperature historic and future climate scenario datasets at 1-km resolution for streams throughout the Pacific Northwest. We describe scenarios used here further below.
+Additionally, stream temperature data were downloaded from the [NorWeST webpage](https://www.fs.fed.us/rm/boise/AWAE/projects/NorWeST.html) and are described by Isaak et al. (2017). Briefly, the NorWeST page hosts various stream temperature historic and future climate scenario datasets at 1-km resolution for streams throughout the Pacific Northwest. In general, the NorWeST approach is to use spatial stream network models to extrapolate between temperature loggers using flow-based directional spatial autocorrelation. They cover a wide range of streams in the western United States, across a number of different years. We describe scenarios used here further below.
 
 #### Life-Stage Temperature Thresholds
 
@@ -396,7 +399,7 @@ I could probably make these methods a little more dynamic to reflect which tempe
 
 ### Chinook Salmon Redds
 
-1. The spatially, temporally continuous temperature predictions dataset was filtered to only include predictions for a given watershed (e.g., Lemhi) and then we selected predictions for a julian date within the peak of the spawning season.
+1. The spatially, temporally continuous temperature predictions dataset was filtered to only include predictions for a given watershed (e.g., Lemhi) and then we selected predictions for a julian date within the peak of the spawning season (for the McNyset temperature model) or the average August temperature (for the NorWeST temperature model).
 2. River kilometer points were joined to the temperature dataset to assign the spatially continuous temperature predictions to an rkm.
 3. Temperature predictions were average within rkms and across years for which data were available.
 4. Redd locations were joined to the spatially continuous temperature predictions and plotted to show the distribution of redds within a watershed along with the mean of 8-day maximum temperature predictions.
@@ -451,7 +454,6 @@ lemh_temp_rkm_redds_map = lemh_temp_rkm_sf %>%
             filter(Waterbody == "Lemhi River"),
           size = 1,
           shape = 1) +
-  theme_bw() +
   labs(title = "Lemhi River",
        colour = "Mean of 8-day Max Temps\nAug 29 (°C)" ) +
   theme(axis.title = element_blank())
@@ -476,7 +478,58 @@ lemh_temp_rkm_redds_yr_map = lemh_temp_rkm_redds_map +
 lemh_temp_rkm_redds_yr_map
 ```
 
-Figure \@ref(fig:lemh-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:lemh-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted August temperature, averaged across years 2002-2011.
+```{r lemh-redd-map-nrwt, eval = F}
+lemh_nrw_temp_rkm_redds_map = aug_temp_rkm %>%
+  filter(watershed == 'Lemhi',
+         scenario == 'Avg_02_11') %>%
+  ggplot() +
+  geom_sf(aes(color = aug_temp),
+          size = 4) +
+  scale_colour_distiller(palette = "Spectral") +
+  geom_sf(data = mra_redds %>%
+            filter(Waterbody == "Lemhi River"),
+          size = 1,
+          shape = 1) +
+  labs(title = "Lemhi River",
+       colour = "Avg. Aug.\nTemperature (°C)" ) +
+  theme(axis.title = element_blank())
+
+
+redd_yrs = mra_redds %>%
+  filter(Waterbody == "Lemhi River") %>%
+  pull(SurveyYear) %>%
+  unique()
+nrwst_yrs = aug_temp_rkm %>%
+  filter(watershed == 'Lemhi',
+         !is.na(yr)) %>%
+  pull(yr) %>%
+  unique()
+
+lemh_nrw_temp_rkm_redds_yr_map = aug_temp_rkm %>%
+  filter(watershed == 'Lemhi',
+         !is.na(yr)) %>%
+  filter(yr %in% redd_yrs) %>%
+  rename(SurveyYear = yr) %>%
+  ggplot() +
+  geom_sf(aes(color = aug_temp),
+          size = 4) +
+  scale_colour_distiller(palette = "Spectral") +
+  geom_sf(data = mra_redds %>%
+            filter(Waterbody == "Lemhi River",
+                   SurveyYear %in% nrwst_yrs),
+          size = 1,
+          shape = 1) +
+  facet_wrap(~ SurveyYear) +
+  theme(legend.position = 'bottom',
+        axis.title = element_blank(),
+        axis.text.x = element_text(angle = -45, vjust = 0)) +
+  labs(title = "Lemhi River",
+       colour = "Avg. Aug.\nTemperature (°C)" )
+```
+
+
+
+Figure \@ref(fig:lemh-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:lemh-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted mean August temperature, averaged across years 2002-2011.
 
 ```{r lemh-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Lemhi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Lemhi River and occurs at the Highway 29 bridge near Leadore and the confluence of Eighteenmile and Texas Creeks. River kilometer 91 is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
 # calculate average redds per rkm
@@ -535,8 +588,7 @@ lemh_temp_rkm_sf %>%
                   expand = F) +
   labs(x = "River Kilometer",
        y = "Mean of 8-day Max Temp, Aug 29 (°C)",
-       title = "Lemhi River") +
-  theme_bw()
+       title = "Lemhi River")
 ```
 
 ```{r lemh-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Lemhi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Lemhi River and occurs at the Highway 29 bridge near Leadore and the confluence of Eighteenmile and Texas Creeks. River kilometer 91 is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
@@ -591,8 +643,7 @@ aug_temp_rkm %>%
                   expand = F) +
   labs(x = "River Kilometer",
        y = "Mean Aug Temp (°C)",
-       title = "Lemhi River") +
-  theme_bw()
+       title = "Lemhi River")
 
 ```
 
@@ -652,7 +703,7 @@ pahs_temp_rkm_redds_map = pahs_temp_rkm_sf %>%
             filter(Waterbody == "Pahsimeroi River"),
           size = 1,
           shape = 1) +
-  theme_bw() +
+  
   labs(title = "Pahsimeroi River",
        colour = "Mean of 8-day Max Temps\nAug 29 (°C)") +
   theme(axis.title = element_blank())
@@ -680,7 +731,7 @@ pahs_temp_rkm_redds_yr_map = pahs_temp_rkm_redds_map +
 pahs_temp_rkm_redds_yr_map
 ```
 
-Figure \@ref(fig:pahs-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:pahs-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted August temperature, averaged across years 2002-2011.
+Figure \@ref(fig:pahs-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:pahs-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted mean August temperature, averaged across years 2002-2011.
 
 ```{r pahs-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Pahsimeroi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Pahsimeroi River and occurs at the confluence of the West Fork and East Fork Pahsimeroi River. River kilometer 85, the downstream extent is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
 # calculate average redds per rkm
@@ -735,8 +786,7 @@ pahs_temp_rkm_sf %>%
                   expand = F) +
   labs(x = "River Kilometer",
        y = "Mean of 8-day Max Temp, Aug 29 (°C)",
-       title = "Pahsimeroi River") +
-  theme_bw()
+       title = "Pahsimeroi River")
 ```
 
 ```{r pahs-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Pahsimeroi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Pahsimeroi River and occurs at the confluence of the West Fork and East Fork Pahsimeroi River. River kilometer 85, the downstream extent is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
@@ -790,8 +840,7 @@ aug_temp_rkm %>%
                   expand = F) +
   labs(x = "River Kilometer",
        y = "Mean Aug Temp (°C)",
-       title = "Pahsimeroi River") +
-  theme_bw()
+       title = "Pahsimeroi River")
 
 ```
 
@@ -860,7 +909,7 @@ upsa_temp_rkm_redds_map = upsa_temp_rkm_sf %>%
   coord_sf(crs = 32612, # changing the coord_sf to widen the map
            xlim = as.vector(st_bbox(upsa_temp_rkm_sf)[c(1,3)] + c(-1,1) * 4000),
            expand = T) +
-  theme_bw() +
+  
   labs(title = "Salmon River",
        colour = "Mean of 8-day Max Temps\nAug 29 (°C)") +
   theme(axis.title = element_blank(),
@@ -888,7 +937,7 @@ upsa_temp_rkm_redds_yr_map = upsa_temp_rkm_redds_map +
 upsa_temp_rkm_redds_yr_map
 ```
 
-Figure \@ref(fig:upsa-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:upsa-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted August temperature, averaged across years 2002-2011.
+Figure \@ref(fig:upsa-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:upsa-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted mean August temperature, averaged across years 2002-2011.
 
 ```{r upsa-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Upper Salmon River (above Redfish Lake Creek) averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Upper Salmon River at its source. River kilometer 56, the downstream extent, is at its confluence with Redfish Lake Creek. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
 # calculate average redds per rkm
@@ -946,8 +995,7 @@ upsa_temp_rkm_sf %>%
                   expand = F) +
   labs(x = "River Kilometer",
        y = "Mean of 8-day Max Temp, Aug 29 (°C)",
-       title = "Upper Salmon River") +
-  theme_bw()
+       title = "Upper Salmon River")
 ```
 
 ```{r upsa-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Upper Salmon River (above Redfish Lake Creek) averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Upper Salmon River at its source. River kilometer 56, the downstream extent, is at its confluence with Redfish Lake Creek. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
@@ -1003,8 +1051,7 @@ aug_temp_rkm %>%
                   expand = F) +
   labs(x = "River Kilometer",
        y = "Mean Aug Temp (°C)",
-       title = "Upper Salmon River") +
-  theme_bw()
+       title = "Upper Salmon River")
 
 ```
 
