@@ -63,6 +63,7 @@ library(raster)
 library(ggplot2)
 library(ggpubr)
 library(ggrepel)
+library(ggspatial)
 library(tidyverse)
 
 theme_set(theme_bw())
@@ -114,55 +115,23 @@ lt_plot = function(data, wtsd, spc) {
 
 # Introduction
 
-The Bureau of Reclamation (BOR), Idaho Governor's Office of Species Conservation (OSC), and an interdisciplinary team of partners have assembled an Upper Salmon Assessment Team to complete biologic and geomorphic analyses in support of future project identification, prioritization, and design in the Upper Salmon Subbasin, Idaho targeted at improving stream and riparian habitat to support imperiled Chinook salmon and steelhead populations. The biologic and geomorphic analyses are being lead by Biomark, Inc. (Biomark) and Rio Applied Science and Engineering (Rio ASE), respectively. Past efforts from the team resulted in the development of a watershed-scale Integrated Rehabilitation Assessment (IRA; Idaho OSC Team 2019) in the Lemhi, Pahsimeroi, and Upper Salmon (Sawtooth Valley) watersheds. This inital phase of the project identified the "problem" by spatially quantifying capacity limitation for spring/summer chinook salmon and summer run steelhead within a geomorphic context across these threee watersheds. The second phase, termed the Multiple Reach Assessments (MRA), includes identifying appropriate and focused "solutions" to the identified capacity problems within four valley segments: Upper Lemhi, Lower Lemhi, Lower Pahsimeroi,a nd Upper Salmon (Decker Flats). To achieve this goal, the team will collaboratively summarize existing and targeted physical habitat conditions relative to document habitat needs for specific species and life stages, including discussion of high-quality habitat, its creation, and its maintenance to inform future rehabilitation actions.
+The Bureau of Reclamation (BOR), Idaho Governor's Office of Species Conservation (OSC), and an interdisciplinary team of partners have assembled an Upper Salmon Assessment Team to complete biologic and geomorphic analyses in support of future project identification, prioritization, and design in the Upper Salmon Subbasin, Idaho targeted at improving stream and riparian habitat to support imperiled Chinook salmon and steelhead populations. The biologic and geomorphic analyses are being lead by Biomark, Inc. (Biomark) and Rio Applied Science and Engineering (Rio ASE), respectively. Past efforts from the team resulted in the development of a watershed-scale Integrated Rehabilitation Assessment (IRA; Idaho OSC Team 2019) in the Lemhi, Pahsimeroi, and Upper Salmon (Sawtooth Valley) watersheds. This inital phase of the project identified the "problem" by spatially quantifying capacity limitation for spring/summer Chinook salmon and summer run steelhead within a geomorphic context across these three watersheds. The second phase, termed the Multiple Reach Assessments (MRA), includes identifying appropriate and focused "solutions" to the identified capacity problems within four valley segments: Upper Lemhi, Lower Lemhi, Lower Pahsimeroi, and Upper Salmon (Decker Flats). To achieve this goal, the team will collaboratively summarize existing and targeted physical habitat conditions relative to documented habitat needs for specific species and life stages, including discussion of high-quality habitat, its creation, and its maintenance to inform future rehabilitation actions.
 
-In the IRA, we determined that available spawning habitat (i.e., redd capacity) was not limiting in any of the target watersheds (Lemhi River, Pahsimeroi River, and upper Salmon River above Redfish Lake Creek) for either Chinook salmon or steelhead. Available spawning capacity was estimated as the total number of redds that each watershed could support and was estimated using quantile regression forest (QRF; Idaho OSC Team 2019, Appendix B) models and the number of redds required to support contemporary escapement or escapement to support recovery goals (e.g., minimum abundance thresholds [MAT]) was estimated using a generalized capacity model (Idaho OSC Team 2019, Appendix C). It was instead concluded that juvenile rearing habitat, during both summer and winter months, was likely limiting productivity of Chinook salmon and steelhead populations in target watersheds. Additionally, life stages not evaluated there (e.g., incubation, fry) may contribute to limited productivity in these populations. With that said, we acknowledge that future habitat actions in the target watershed should attempt to take a "do no harm" approach and minimize any negative impacts to available spawning habitat, especially in existing core spawning areas. But we believe that any appropriate actions to improve juvenile rearing will likely cause minimal or no negative impacts to spawning habitat, especially if habitat complexity (e.g., increased pool frequency with following pool-tail, riffle sequences) is considered. Additionally, if was stated in the IRA that *"providing sufficient adult holding (prespawn) habitat should be considered and would be provided by increased habitat complexity"*. Within the Lemhi, Pahsimeroi, and Upper Salmon watersheds, Chinook salmon may hold in reaches downstream or near the spawning areas in late-July and August prior to the spawning season, a time where high stream temperatures can be problematic. And finally, the Idaho OSC Team found that *"spawning habitat historically occurred farther upstream than current core ares, especially in the Upper Salmon River headwaters, effectively reducing the area currently available for rearing (i.e., area downstream of spawning).* One of the goals of this evaluation is to document the location and distribution of spawning redds in the target watersheds for recent years in which redd surveys were completed and data are available. Redd survey data were made available by the Idaho Department of Fish and Game (IDFG). Here, modeled stream temperatures available from McNyset et al. (2015) are compared to recent redd density data to determine whether temperatures are appropriate or perhaps problematic in those areas; we can also consider areas that may have historically been used for spawning.  
+In the IRA, we determined that available spawning habitat (i.e., redd capacity) was not limiting in any of the target watersheds for either Chinook salmon or steelhead. Available spawning capacity was estimated as the total number of redds that each watershed could support and was estimated using quantile random forest (QRF; Idaho OSC Team 2019, Appendix B) models and the number of redds required to support contemporary or recovery escapement (e.g., minimum abundance thresholds [MAT]) was estimated using a generalized capacity model (Idaho OSC Team 2019, Appendix C). It was instead concluded that juvenile rearing habitat, during both summer and winter months, was likely limiting productivity of Chinook salmon and steelhead populations in target watersheds. Additionally, life stages not evaluated there (e.g., incubation, fry) may contribute to limited productivity in these populations. 
 
-In Appendix A of the IRA report (Idaho OSC Team 2019), we used a combination of modeled temperature predictions (McNyset et al. 2015) and life-stage-specific temperature thresholds (Carter 2005) to evaluate whether current water temperatures might limit the ability of spring-summer run Chinook and summer run steelhead to use available habitat in the Lemhi, Pahsimeroi, and Upper Salmon watersheds. In addition, a simple warming scenario was presented (added 3&deg;C to contemporary modeled temperatures) to describe potential increases in stream temperature expected to result from climate change to assess whether the implementation of restoration actions to reduce temperatures may be necessary to aid recovery of Chinook salmon and steelhead in the watersheds. The following are the key findings from that temperature and climate change assessment:
+Considering the above, we acknowledge that future habitat actions in the target watersheds should attempt a "do no harm" approach and minimize any negative impacts to available spawning habitat, especially in existing core spawning areas. But we believe that any appropriate actions to improve juvenile rearing will likely cause minimal or no negative impacts to spawning habitat, especially if habitat complexity (e.g., increased pool frequency with following pool-tail, riffle sequences) is considered. Additionally, it was stated in the IRA that *"providing sufficient adult holding (prespawn) habitat should be considered and would be provided by increased habitat complexity"*. Within the Lemhi, Pahsimeroi, and Upper Salmon watersheds, Chinook salmon may hold in reaches downstream or near the spawning areas in late-July and August prior to the spawning season, a time where high stream temperatures can be problematic. And finally, the Idaho OSC Team found that *"spawning habitat historically occurred farther upstream than current core ares, especially in the Upper Salmon River headwaters, effectively reducing the area currently available for rearing (i.e., area downstream of spawning).* One of the goals of this evaluation is to document the location and distribution of spawning redds in the target watersheds for recent years in which redd surveys were completed and data are available. Redd survey data were made available by the Idaho Department of Fish and Game (IDFG). Here, modeled stream temperatures available from McNyset et al. (2015) and temperature scenarios available from NorWeST (Isaak et al. 2017) are compared to recent redd density data to determine whether temperatures are appropriate or perhaps problematic in those areas; we can also consider areas that may have historically been used for spawning.  
 
-<!--
-I just spewed the below findings out using text from the IRA. Might be nice to summarize this more concisely either as like a table or just simplified under a single header.
--->
+In Appendix A of the IRA report (Idaho OSC Team 2019), we used a combination of modeled temperature predictions (McNyset et al. 2015) and life-stage-specific temperature thresholds (Carter 2005) to evaluate whether current water temperatures might limit the ability of spring-summer run Chinook and summer run steelhead to use available habitat in the Lemhi, Pahsimeroi, and Upper Salmon watersheds. In addition, a simple warming scenario was presented (added 3&deg;C to contemporary modeled temperatures) to describe potential increases in stream temperature expected to result from climate change to assess whether the implementation of restoration actions to reduce temperatures may be necessary to aid recovery of Chinook salmon and steelhead in the watersheds. Appendix A of this document provides a summary of key findings from that temperature and climate change assessment, but here we provide a brief synopsis of those findings:
 
-## Lemhi River
+## IRA Temperature Evaluation Synopsis
 
-### Chinook salmon
-
-Under current conditions, winter and early-spring modeled stream temperatures were below optimum values during egg incubation, fry emergence, juvenile winter rearing, and spring smolt emigration; this can potentially slow incubation and emergence resulting in fry emergence occurring during sub-optimal timing. Low temperatures during winter months can also cease presmolt growth or condition during winter months. Modeled summer temperatures exceed optimum values at times, potentially increasing stress during adult holding and elevating food requirements for summer parr. Under an assumed 3&deg;C increase scenario, winter and spring condtions improved somewhat, but conditions worsen for summer parr and spawners with temperatures exceeding maximum thresholds for Chinook salmon in excess of 50% of the time.
-
-### Steelhead
-
-Under current conditions, winter and early-spring modeled water temperatures were below optimum values for juvenile rearing and spring emigration, likely reducing juvenile growth and condition factors during winter months. Under the assumed 3&deg;C increase scenario, conditions improved for winter and spring life stages; however, conditions worsed during late-spring and summer with temperatures exceeding maximum temperature thresholds for summer juvenile rearing across much of the watershed.
-
-## Pahsimeroi
-
-### Chinook salmon
-
-Under current conditions, stream temperatures in the Pahsimeroi River are rarely below optimum values. However, spring and summer temperatures tend to exceed optimum values for extended periods, potentially increasing stress on adults during staging (holding) and spawning. High spring and summer temperatures can also increase stress during incubation and emergence and increase food requirements for spring smolts and summer parr, potentially decreasing body condition. Under the assumed 3&deg;C increase scenario, conditions worsened for all summer life stages, with water temperatures above optimum for a majority of the time and potentially surpassing acute (lethal) temperatures for holding and spawning adults.
-
-### Steelhead
-
-Although current modeled water temperatures in the Pahsimeroi River seem to be okay for most life stages evaluated, conditons worsen under the 3&deg;C increase scenario with temperatures above optimum, maximum, or acute thresholds during spawining, incubation, emergence, spring smolt emigration, and summer parr rearing life stages.
-
-## Upper Salmon
-
-### Chinook salmon
-
-Under current conditions, modeled stream temperatures are generally within optimum temperatures for each of the life stages evaluated; however, under the 3&deg;C increase scenario conditions again worsen for summer life stages including adult holding and spawning and parr rearing.
-
-### Steelhead
-
-Similar to Chinook salmon, modeled stream temperatures are generally within optimum temperatures for each of the life stages evaluated under current conditions. And again, most notably, under the 3&deg;C increase scenario, summer water temperatures potentially increase to above maximum during portions of spawning and summer parr rearing.
-
-## Overall Life Stage Specific Temperature Findings from IRA
-
-Not surprisingly, problematic stream temperature condtions were primarily identified during the extreme seasons, winter and summer. During winter and under current conditons, stream temperatures are often below optimum temperatures for juvenile winter rearing. This can results in no growth or loss of body condition prior to the spring emigration season. During summer, modeled stream temperatures were often above optimum or maximum thresholds for adult holding and spawning or summer rearing. Summer conditions worsened under the simple climate change scenario in all cases. High temperatures for adults can result in prespawn mortality or increased stress during spawning behavior. High temperatures for parr increases food requirements which increases energy expenditure to search for food and decreased growth and body conditon, potentially leading to decreased survival during fall or winter months, or forcing individuals to emigrate downstream in search for more optimal fall and winter rearing.
+Problematic stream temperature conditions were primarily identified during the extreme seasons, winter and summer. During winter, and under current conditions, stream temperatures are often below optimum temperatures for juvenile winter rearing. This can result is little or no growth, and in cases, loss of body condition prior to the spring emigration season, a critical stage to juvenile survival. During summer, modeled stream temperatures are often above optimum or maximum thresholds for adult holding and spawning and/or summer juvenile rearing. Summer conditions worsened under the simple climate change scenario in all cases. High temperatures during summer can result in prespawn mortality or increased stress during spawning behaviors. High temperatures for parr increases food requirements which increases energy expended to search for food and decreased growth and condition, potentially leading to decreased survival during fall or winter months and/or forcing individuals to emigrate downstream in search of more optimal rearing during cold months. *Presumably, hot temperatures during summer and cold temperatured during winter could be, at least partially, remedied through increase hyporheic flow and stream cover.*
 
 ## Objectives
 
-We document the location and distribution of Chinook salmon spawning in the target watersheds and compare redd density summaries to available modeled temperature results. The goal is to make available the distribution of contemporary core spawning areas, examine temperatures in those areas, and examine historic spawning areas, in a spatially explicit (i.e., by river kilometer [rkm]) framework.
+First, we document the spatial distribution of Chinook salmon spawning in the target watersheds and compare redd densities (redds/km) to available modeled or empirical temperature data. The goal is to make available the spatial distribution of contemporary core spawning areas, examine stream temperatures in those areas to determine if temperatures are appropriate for spawning, and summarize ina spatially explicit (i.e., by river kilometer [rkm]) framework.
 
-Further, we want to examine stream temperatures during critical life stages for Chinook salmon and steelhead in each of the three watersheds (Lemhi, Pahsimeroi, Upper Salmon) and how they compare to temperature thresholds for those species from Carter (2005) in a spatially-explicit manner. By doing this evaluation by rkm, we can identify particular reaches within the watersheds where stream temperatures may be limiting, particularly during winter (juvenile winter rearing) and summer (adult holding, spawning, parr rearing) months identified as problematic in the IRA (Idaho OSC Team 2019).
+Next, we examine modeled or empirical stream temperatures during critical life stages of Chinook salmon and steelhead for each of the three watersheds and how they compare to temperatures thresholds for those species available from Carter (2005), also in a spatially explicit framework. By providing this evaluation by rkm, we can identify particular reaches within the watersheds where stream temperatures may be limiting, particularly during winter (presmolt rearing) and summer (adult holding, spawning, parr rearing) months identified as problematic in the IRA (Idaho OSC Team 2019).
 
 ```{r read-in-data}
 load("../data/mra_temp_rkm_redd_data_prepped.Rdata")
@@ -258,22 +227,21 @@ aug_temp_rkm = mra_norwest %>%
 
 ```
 
-
 # Methods
 
 ## Data Sources
 
-All data and R code used in this analysis can be found in the `mra_redds_norwest` repository located at https://github.com/rcarmichael3/mra_redds_norwest. The following data sources are used here:
+All data and R code used in this analysis can be found in the `mra_redds_norwest` repository located [here](https://github.com/rcarmichael3/mra_redds_norwest). The following data sources are used:
 
 ### Redds
 
-Chinook salmon redd location data were provided to us by IDFG from redd surveys completed in each of the three watersheds. For the Lemhi River, redd survey data were available for `r min(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Lemhi River")), SurveyYear))` to `r max(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Lemhi River")), SurveyYear))`. Redd data for the Pahsimeroi River were available for `r min(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Pahsimeroi River")), SurveyYear))` to `r max(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Pahsimeroi River")), SurveyYear))`; finally, Upper Salmon redd data were available for `r min(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Salmon River")), SurveyYear))` to `r max(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Salmon River")), SurveyYear))`.
+Chinook salmon redd location data were provided to us by IDFG from redd surveys completed in each of the three watersheds. For the Lemhi River, redd survey data were available for `r min(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Lemhi River")), SurveyYear))` to `r max(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Lemhi River")), SurveyYear))`. Redd data for the Pahsimeroi River were available for `r min(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Pahsimeroi River")), SurveyYear))` to `r max(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Pahsimeroi River")), SurveyYear))`; and finally, Upper Salmon redd data were available for `r min(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Salmon River")), SurveyYear))` to `r max(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Salmon River")), SurveyYear))`.
 
 ### River Kilometer
 
 <!--- Richie, you might have to help me explain the rkm dataset here -->
 
-River kilometers were defined on the stream network as points and were used to assign redd and temperature to specific river locations along the stream network. In each case, river kilometer (rkm) 0 was defined as the upstream extent of the mainstem river and, for the Lemhi and Pahsimeroi Rivers, the downstream extent was their confluence with the mainstem Salmon River. The downstream extend of the Upper Salmon River watershed was defined as the confluence of the mainstem Salmon River and Little Redfish Lake Creek. The following are rkm 0 for each of the watersheds:
+River kilometers were defined on the stream network as points and were used to assign redd and temperature to specific river locations along the stream network. In each case, river kilometer (rkm) 0 was defined as the upstream extent of the mainstem river evaluated and, for the Lemhi and Pahsimeroi Rivers, the downstream extent was their confluence with the mainstem Salmon River. The downstream extent of the Upper Salmon River watershed was defined as the confluence of the mainstem Salmon River and Little Redfish Lake Creek. The following were defined as rkm 0 for each of the watersheds:
 
 * Lemhi River: The confluence of Eighteenmile and Texas Creeks near the Highway 29 bridge in Leadore.
 * Pahsimeroi River: The confluence of the West Fork and East Fork Pahsimeroi River.
@@ -283,27 +251,23 @@ River kilometers were defined on the stream network as points and were used to a
 
 #### Spatially, Temporally Continuous Modeled Temperature
 
-<!-- Kevin, help me out here if I didn't describe this right -->
-
-Spatially and temporally continuous predictions of stream temperatures were available for the three watersheds from a model described in McNyset et al. (2015). The model uses land surface temperautre (LST) data from the U.S. National Aeronautics and Space Administration's (NASA) Moderate Resolution Imaging Spectroradiometer (MODIS) satellite sensor to help extrapolate stream temperature from stream data loggers. The LST data are available daily at a resolution of 1 square kilometer and are summarized over an 8-day NASA "week". Model results were available for each of the watersheds for the following years:
+Spatially and temporally continuous predictions of stream temperatures were available for the three watersheds from a model described in McNyset et al. (2015). The model uses land surface temperature (LST) data from the U.S. National Aeronautics and Space Administration's (NASA) Moderate Resolution Imaging Spectroradiometer (MODIS) satellite sensor to help extrapolate stream temperature available from instream data loggers (e.g., HOBO TidbiT). The LST data are available daily at a resolution of 1 square kilometer and are summarized over an 8-day NASA "week". Model results were available for each of the watersheds for the following years:
 
 * Lemhi River: `r pull(unique(dplyr::select(st_drop_geometry(filter(mra_mcnyset, watershed == "Lemhi")), year)))`
 * Pahsimeroi River: `r pull(unique(dplyr::select(st_drop_geometry(filter(mra_mcnyset, watershed == "Pahsimeroi")), year)))`
 * Upper Salmon River: `r pull(unique(dplyr::select(st_drop_geometry(filter(mra_mcnyset, watershed == "Upper Salmon")), year)))`
 
-<!-- Need to double-check the following station -->
-
 Predictions were available at 8-day intervals and were calculated as the mean of 8-day daily maximum temperatures along stream networks within the three watersheds.
 
 #### NorWeST Temperature
 
-<!-- I'll need Richie's help to describe the NorWeST dataset -->
+<!-- Richie, can you help me out here? Did I state this all correctly? -->
 
-Additionally, stream temperature data were downloaded from the [NorWeST webpage](https://www.fs.fed.us/rm/boise/AWAE/projects/NorWeST.html) and are described by Isaak et al. (2017). Briefly, the NorWeST page hosts various stream temperature historic and future climate scenario datasets at 1-km resolution for streams throughout the Pacific Northwest. In general, the NorWeST approach is to use spatial stream network models to extrapolate between temperature loggers using flow-based directional spatial autocorrelation. They cover a wide range of streams in the western United States, across a number of different years. We describe scenarios used here further below.
+Additionally, stream temperature data were downloaded from the [NorWeST webpage](https://www.fs.fed.us/rm/boise/AWAE/projects/NorWeST.html) and are described by Isaak et al. (2017). Briefly, the NorWeST page hosts various stream temperature historic and future climate scenario datasets at 1-km resolution for streams throughout the Pacific Northwest. In general, the NorWeST approach is to use spatial stream network models to extrapolate between temperature loggers using flow-based directional, spatial autocorrelation. They cover a wide range of streams in the western United States, across a number of different years. We describe scenarios used here further below.
 
 #### Life-Stage Temperature Thresholds
 
-Finally, life-stage specific temperature criteria were adopted from Carter (2005) in addition to transition timing of local Chinook salmon and steelhead life stages (USBWP 2004; Personal Communication, Jude Trapani, Bureau of Reclamation; Personal Communication, Mike Edmondson, Idaho Office of Species Conservation; and Personal Communication, Mike Ackerman, Biomark, Inc., Applied Biological Services) to identify minimum, optimal, maximum, and acute temperature thresholds for various life stages of Chinook salmon and steelhead. Temperature thresholds and seasonal timing for Chinook salmon and steelhead are presented in Tables A-1 and A-2 in Appendix A of the IRA (Idaho OSC Team 2019).
+Finally, life-stage specific temperature criteria were adopted from Carter (2005) in addition to transition timing of local Chinook salmon and steelhead life stages (USBWP 2004; Personal Communication, Jude Trapani, Bureau of Reclamation; Personal Communication, Mike Edmondson, Idaho Office of Species Conservation; and Personal Communication, Mike Ackerman, Biomark, Inc.) to identify minimum, optimal, maximum, and acute temperature thresholds for various life stages. Temperature thresholds and seasonal timing for Chinook salmon and steelhead are presented in Tables A-1 and A-2 in Appendix A of the IRA (Idaho OSC Team 2019).
 
 ```{r wtsd-spc-ls-analysis}
 # set parameters to create df for wtsd-spc-ls longitudinal temp profile plots
@@ -394,21 +358,21 @@ for(wtsd in wtsds) {
 We describe detailed methods for visualization of redd distribution, stream temperature, river kilometer, and life-stage specific temperature thresholds here for a single watershed. Methods were then similarly applied across each of the watersheds: Lemhi River, Pahsimeroi River, Upper Salmon River (above Redfish Lake Creek).
 
 <!-- 
-I could probably make these methods a little more dynamic to reflect which temperature dataset and scenario we use for each, but that's for another day. For example, for redds, we could either average across days within the spawning season from McNyset or just choose a julian day within the spawn season (which I did for starters). Alternatively, we could use any number of the NorWeST scenarios, but I wasn't able to immediately find metadata describing each of the scenarios in the dataset.
+Might eventually be worthwhile to make these methods a little more dynamic to reflect which temperature dataset and scenario we use for each, but that's for another day. For example, for redds, we could either average across days within the spawning season from McNyset or ust choose a julian day within the spawning season (which I did for starters). Alternatively, we ccould use any number of the NorWeST scenarios. Kevin added the metadata for the NorWeST scenarios in the /literature directory of this repo.
 -->
 
 ### Chinook Salmon Redds
 
-1. The spatially, temporally continuous temperature predictions dataset was filtered to only include predictions for a given watershed (e.g., Lemhi) and then we selected predictions for a julian date within the peak of the spawning season (for the McNyset temperature model) or the average August temperature (for the NorWeST temperature model).
+1. The spatially, temporally continuous temperature predictions datasets were filtered to only include predictions for a given watershed (e.g., Lemhi) and then we selected predictions for a julian date within the peak of the spawning season (for the McNyset temperature model) or the average August temperature (for the NorWeST temperature model).
 2. River kilometer points were joined to the temperature dataset to assign the spatially continuous temperature predictions to an rkm.
 3. Temperature predictions were average within rkms and across years for which data were available.
-4. Redd locations were joined to the spatially continuous temperature predictions and plotted to show the distribution of redds within a watershed along with the mean of 8-day maximum temperature predictions.
+4. Redd locations were joined to the spatially continuous temperature predictions and plotted to show the spatial distribution of redds within a watershed along with the mean of 8-day maximum temperature predictions.
 5. Redd locations were also plotted by survey year to show potential changes in the distribution of redds over time.
 6. Additionally, rkm points were attached to the redd location data to assign each redd to an rkm.
 7. Redd density was calculated as the number of redds per rkm for each year and then averaged across years.
-8. Redd densities, by rkm, were plotted with a longitudinal temperature profile to visualize modeled stream densities where redd densities are highest (or vice-versa).
+8. Redd densities, by rkm, were plotted with a longitudinal temperature profile to visualize stream temperatures where redd densities are highest (or vice-versa).
 
-These plots provide a summary of the current (existing) distribution of Chinook salmon redds in the three watersheds and whether those redds fall within temperatures appropriate for adult holding or spawning. Additionally, we can consider the potential historic distribution of Chinook salmon spawning in those areas. Finally, we, at least initially, present temperature predictions for August 29, here, but the framework allows us to present any historic, contemporary, or future climate change scenario and using either the spatially, temporally continuous dataset (McNyset et al. 2015) or data from NorWeST (Isaak et al. 2017).
+These plots provide a summary of the current (existing) spatial distribution of Chinook salmon redds in the three watersheds and whether those redds fall within temperatures appropriate for adult holding or spawning. Additionally, we can consider any available information on the historic distribution of Chinook salmon spawning in those areas.
 
 ### Life Stage Specific Longitudinal Temperature Profiles
 
@@ -443,7 +407,7 @@ lemh_temp_rkm_sf = mra_mcnyset %>%
 
 The distribution of Chinook salmon redd locations in the Lemhi River for years in which survey data were available, along with predictions of the mean of 8-day maximum temperatures for August 29 are shown in Figures \@ref(fig:lemh-temp-redd-map) and \@ref(fig:lemh-redd-map-by-year).
 
-```{r lemh-temp-redd-map, fig.cap = "Map of Lemhi River showing modeled stream temperatures near the late summer spawning season for Chinook salmon and the distribution of redds (small, open black circles) available from redd surveys in recent years. Modeled temperatures are predictions for August 29 averaged across years where predictions are available."}
+```{r lemh-temp-redd-map, fig.cap = "Map of Lemhi River showing modeled stream temperatures during spawning for Chinook salmon and the distribution of redds (small, open black circles) available from redd surveys in recent years. Modeled temperatures are predictions for August 29 averaged across years where predictions are available."}
 # map lemhi summer temps with redd locations
 lemh_temp_rkm_redds_map = lemh_temp_rkm_sf %>%
   ggplot() +
@@ -465,11 +429,14 @@ lemh_temp_rkm_redds_map +
                    aes(x = X,
                        y = Y,
                        label = label),
-                  nudge_x = -10000)
+                  nudge_x = -10000) +
+  annotation_north_arrow(location = "bl",
+                         height = unit(0.75, "cm"),
+                         width = unit(0.75, "cm"))
 
 ```
 
-```{r lemh-redd-map-by-year, fig.cap = "Same as figure above, except faceted by survey year to show years for which data are available and how the distribution of redds potentially changed."}
+```{r lemh-redd-map-by-year, fig.cap = "Same as figure above, except faceted by survey year to show years for which data are available and how the spatial distribution of redds potentially changed."}
 # the above, but facetted by year
 lemh_temp_rkm_redds_yr_map = lemh_temp_rkm_redds_map +
   facet_wrap(~ SurveyYear) +
@@ -527,9 +494,7 @@ lemh_nrw_temp_rkm_redds_yr_map = aug_temp_rkm %>%
        colour = "Avg. Aug.\nTemperature (°C)" )
 ```
 
-
-
-Figure \@ref(fig:lemh-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:lemh-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted mean August temperature, averaged across years 2002-2011.
+Figures \@ref(fig:lemh-redds-n-temps) and \@ref(fig:lemh-redds-n-nrwt-temps) provide longitudinal temperature profiles, along with mean redd densities averaged across year for which survey data were available. Figure \@ref(fig:lemh-redds-n-temps) uses the mean of 8-day maximum temperature predictions for August 29 whereas Figure \@ref(fig:lemh-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted mean August temperature, averaged across years 2002-2011.
 
 ```{r lemh-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Lemhi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Lemhi River and occurs at the Highway 29 bridge near Leadore and the confluence of Eighteenmile and Texas Creeks. River kilometer 91 is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
 # calculate average redds per rkm
@@ -657,7 +622,7 @@ rm(list = ls(pattern = "^lemh_")) # might make sense to remove this later
 
 #### Chinook salmon
 
-Figure \@ref(fig:lemh-chnk-lt-plot) reference here...
+Figure \@ref(fig:lemh-chnk-lt-plot) summarizes longitudinal temperature profiles (minimum, maximum, and smoothed) by life stage for Chinook salmon in the Lemhi River along with minimum (dashed blue), maximum (dashed red), acute (solid red), and optimum (green ribbon) temperature thresholds from Carter (2005).
 
 ```{r lemh-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Salmon River faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Lemhi", spc = "chinook")
@@ -665,7 +630,7 @@ lt_plot(data = all_data, wtsd = "Lemhi", spc = "chinook")
 
 #### Steelhead
 
-Figure \@ref(fig:lemh-sthd-lt-plot) reference here...
+Figure \@ref(fig:lemh-sthd-lt-plot) summarizes longitudinal temperature profiles (minimum, maximum, and smoothed) by life stage for steelhead in the Lemhi River along with minimum (dashed blue), maximum (dashed red), acute (solid red), and optimum (green ribbon) temperature thresholds from Carter (2005).
 
 ```{r lemh-sthd-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Salmon River faceted by steelhead life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Lemhi", spc = "steelhead")
@@ -717,7 +682,10 @@ pahs_temp_rkm_redds_map +
                    aes(x = X,
                        y = Y,
                        label = label),
-                  nudge_x = 20000)
+                  nudge_x = 20000) +
+    annotation_north_arrow(location = "bl",
+                         height = unit(0.75, "cm"),
+                         width = unit(0.75, "cm"))
 
 
 ```
@@ -854,7 +822,7 @@ rm(list = ls(pattern = "^pahs_")) # might make sense to remove this later
 
 #### Chinook salmon
 
-Figure \@ref(fig:pahs-chnk-lt-plot) reference here...
+Figure \@ref(fig:pahs-chnk-lt-plot) summarizes longitudinal temperature profiles (minimum, maximum, and smoothed) by life stage for Chinook salmon in the Pahsimeroi River along with minimum (dashed blue), maximum (dashed red), acute (solid red), and optimum (green ribbon) temperature thresholds from Carter (2005).
 
 ```{r pahs-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Pahsimeroi River faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Pahsimeroi", spc = "chinook")
@@ -862,7 +830,7 @@ lt_plot(data = all_data, wtsd = "Pahsimeroi", spc = "chinook")
 
 #### Steelhead
 
-Figure \@ref(fig:pahs-sthd-lt-plot) reference here...
+Figure \@ref(fig:pahs-sthd-lt-plot) summarizes longitudinal temperature profiles (minimum, maximum, and smoothed) by life stage for steelhead in the Pahsimeroi River along with minimum (dashed blue), maximum (dashed red), acute (solid red), and optimum (green ribbon) temperature thresholds from Carter (2005).
 
 ```{r pahs-sthd-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Pahsimeroi River faceted by steelhead life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Pahsimeroi", spc = "steelhead")
@@ -922,7 +890,10 @@ upsa_temp_rkm_redds_map +
                    aes(x = X,
                        y = Y,
                        label = label),
-                  nudge_x = 10000)
+                  nudge_x = 10000) +
+    annotation_north_arrow(location = "bl",
+                         height = unit(0.75, "cm"),
+                         width = unit(0.75, "cm"))
 
 
 ```
@@ -1065,7 +1036,7 @@ rm(list = ls(pattern = "^upsa_")) # might make sense to remove this later
 
 #### Chinook salmon
 
-Figure \@ref(fig:upsa-chnk-lt-plot) reference here...
+Figure \@ref(fig:upsa-chnk-lt-plot) summarizes longitudinal temperature profiles (minimum, maximum, and smoothed) by life stage for Chinook salmon in the Upper Salmon watershed along with minimum (dashed blue), maximum (dashed red), acute (solid red), and optimum (green ribbon) temperature thresholds from Carter (2005).
 
 ```{r upsa-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Upper Salmon River (above Redfish Lake Creek) faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "chinook")
@@ -1073,7 +1044,7 @@ lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "chinook")
 
 #### Steelhead
 
-Figure \@ref(fig:upsa-sthd-lt-plot) reference here...
+Figure \@ref(fig:upsa-sthd-lt-plot) summarizes longitudinal temperature profiles (minimum, maximum, and smoothed) by life stage for steelhead in the Upper Salmon watershed along with minimum (dashed blue), maximum (dashed red), acute (solid red), and optimum (green ribbon) temperature thresholds from Carter (2005).
 
 ```{r upsa-sthd-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Upper Salmon River (above Redfish Lake Creek) faceted by steelhead life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "steelhead")
@@ -1081,24 +1052,29 @@ lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "steelhead")
 
 # Discussion
 
-Still need to add some discussion...
+Initial thoughts from Mike:
 
-The main things that come to my (MA) mind:
+* The spatial distribution of redds (i.e. the core spawning areas) within the Lemhi river do seem to occur within reaches where stream temperatures during August are okay. Stated another way, stream temperatures in core spawning areas in the upper Lemhi River seem within a range appropriate for adult holding and spawning. It does seem, though, at least according to the McNyset and NorWeST scenarios we used, that temperatures in the lower Lemhi below rkm 65 are above optimum ranges for holding and spawning. And, at least in my mind, these temperatures seem lower than we often actually observed in the lower Lemhi where temperatures are often too high for juvenile fish handling by mid-morning. First, did spawning ever occur in the lower Lemhi (some substrate seems appropriate), but temperatures are just too high now? Second, do warm temperatures in the lower Lemhi cause stress during adult entry and holding, reducing fitness or performance during spawning in the upper Lemhi River? Irrigation during summer months, decreasing flow, likely exacerbates the problem.
 
-* Redd locations (i.e., the core spawning areas) in the Lemhi River do seem to occur where stream temperatures are appropriate or okay. Interesting. I'm wondering, does historic redd distribution information suggest redds lower in system if and when stream temps were cooler prior to so much irrigation during summer months? But it does seem that temperatures are okay in the current core spawning area.
-* On the contrary, redd distributions in the Pahsimeroi and Upper Salmon occur in areas where temps seem way too high. Couple things...redds are largely constrained to occur below the weirs. Those redds, too, are likely dominated by hatchery fish. Has the presence of a weir hindered the ability or encouraged wild fish to spawn low in the systems where stream temps are too high? And for those few wild redds that do occur below the weirs, they are probably dominated or overrun by hatchery redds. I wouldn't doubt if there's imposition of redds in those limited locations. In Pahsimeroi, I don't have a great sense for how much appropriate spawning areas there are above the weir, but at least some of the habitat Richie and I walked, particularly in Patterson Creek, seemed like decent spawning habitat that, at least according to this data, doesn't seem to be getting used.
-* Temperatures during the extreme seasons (mid-summer and mid-winter) do seem to be limiting. High summer temps likely cause stress for holding and spawning adults, potentially causing pre-spawn mortality or reduced fitness during spawning. And high temps likely increase 'metabolic stress' and food requirements for parr, also perhaps increasing stress and decreasing body condition prior to fall and spring. Does that encourage the presmolt life history? Further temperatures during the winter are too low for winter rearing, which isn't surprising, but can temperatures be mediated during these extreme seasons. It seems that hyporheic exchange may be key to moderating temps during the extreme seasons! More evidence to increase complexity, channel unit frequency, etc.
+* All redds in the Pahsimeroi River occur at about rkm 60 and below with the highest densities at rkm 70 and below. According the the McNyset and NorWeST datasets used, stream temperatures there are above optimum for adult holding or spawning. Redd locations in the Pahsimeroi appear to be partially constrained by the weir with the highest densities occur just above, at, or below the weir. Additionally, redds below the weir may be dominated by hatchery fish that fail to return back to the hatchery rack (although further examination of the data would be needed to confirm that). Has the presence of the hatchery weir altered the spatial distribution of redds in the Pahsimeroi River and hindered the ability (or at least encouraged) natural origin Chinook salmon to spawn lower in the Pahsimeroi where stream temepratures are too warm? The consolidating of redds to locations within proximity of the redd may also cause redd imposition there. Within the Pahsimeroi River, I don't have a great sense for how much appropriate spawning areas there are above the weir, but at least some of the habitat that Richie and I walked during summer 2018 (particularly in Patterson Big Springs Creek) seemed like decent spawning habitat. Anecdotally, I have heard that more spawning has occurred in Patterson Big Springs in recent years due to some management or habitat change that I don't recall (maybe restoring some connection of Patterson Big Springs?).
+
+* Within the Upper Salmon watershed, the modeled temperature predictions (McNyset et al. 2015) suggest that stream temperatures are above Chinook salmon spawning optimum below rkm 10; however, that data shows a peculiar trend (highest temperatures around rkm 20 with cooling downstream) and may be suspect. Alternatively, the NorWeST temperature data suggest temperatures are within optimum in most/all locations with moderate to high redd densities. High summer temperatures are of least concern here for all summer life stages considered.
+
+* Spatial redd distributions in the Upper Salmon watershed are a concern. Redd densities are (by far!) highest below, at, and within close proximity above the weir. Redds below the weir, again, may be from a large proportion of hatchery origin fish that fail to return to the hatchery rack. Also, high redd densities may contribute to redd superimposition include imposition of hatchery origin redds on top of natural origin redds. The consolidation of redds to reaches near the weir effectively reduces the amount of available juvenile rearing habitat in the Upper Salmon watershed if we assume that upstream movement of juveniles to explore habitat is minimal. The movement of adults upriver through trap-and-haul is encouraging, but the action does provide additional stress to hauled adults. The spawning map does show redd locations higher in the system during some years (namely 2010; 2015-2017; why the abrupt changes to spatial distribution?), but densities are much lower than by the weir.
+
+* Temperatures during the most extreme seasons (i.e. mid-summer and mid-winter) do seem to be limiting being too low for winter juvenile rearing and too high for summer juvenile rearing and adult holding and spawning. The high summer temps likely cause stress for holding and spawning adults, potentially causing pre-spawn mortality or reduced fitness during spawning. High summer temperatures also likely increase metabolic stress and food requirements for parr, perhaps decreasing body condition prior to fall and spring. Does this increased stress and lower body condition contribute to more individuals attempting a presmolt or downstream rearing life history? Further, temperature during the winter are too low for winter rearing, which isn't surprising. Temperature mediation during both mid-summer and mid-winter would be helpful in all three target watersheds, likely from increases hyporheic flow and/or stream cover. Can we increase hyporheic flow through increased sinuosity, stream complexity, channel unit, frequency, etc?
 
 Thoughts from Kevin:
 
 * Chinook are spawning in the coolest part of the Lemhi watershed, and the temperatures there are well within the optimum temperature for spawning. Also curious if there's historical data or anecdotal evidence that spawning used to occur lower in the watershed, and/or if temperatures were cooler there prior to irrigation withdrawals. 
+
 * In the Pahsimeroi, all the spawning seems to be occuring in the lower 25 km of the river, which does **not** correspond with the coolest temperatures. In fact, the lowest 20 km (from rkm 65) appears to be routinely above the optimum temperature range for spawning, and yet that's where the highest redd densities are. Is the weir having any effect on how far salmon are willing to travel upstream to spawn? The spawning pattern (Figure \@ref(fig:pahs-redd-map-by-year)) seems pretty consistent across the years we've examined here.
+
 * On the other hand, there seems to be more variability in the spawning pattern in the Upper Salmon (Figure \@ref(fig:upsa-redd-map-by-year)). Like the Pahsimeroi, most of the spawning generally seems to occur in the lower watershed, within the lowest 5 km. This area appears to be on the upper edge of the optimum spawning temperature, and as one moves upstream, the temperatures then rise. So perhaps fish sense warming temperatures as they are moving upstream, and eventually decide to spawn before it gets too warm, but also before they reach the coolest waters near the upper part of the watershed.
+
 * Using the predictions of 8-day means of the max temperatures from McNyset at the end of August paints a different picture than using the 2002-2011 average predictions for August from NorWeST. The NorWeST longitudinal profiles indicate that the entirety of each watershed has temperatures in the optimum range for spawning, suggesting there are potentially other factors influencing the patterns of redd distribution.
 
 * Temperatures appear too cold for the winter juvenile stage for both species in all watersheds. However, the thresholds defined in Carter (2005) do not mention overwintering specifically, and the winter thresholds applied here are the same as for summer juveniles. Those are based in part on the ability of a fish to grow, and if they are not growing and/or feeding much in the winter, these thresholds may not be appropriate. The same threshold were applied to spring smolts, but I'm unclear how much growth should factor into smolt habitat suitability. 
-
-
 
 ## Conclusions
 
@@ -1113,3 +1089,41 @@ Idaho OSC Team (Idaho Governor’s Office of Species Conservation and partners).
 Isaak, D., S. Wenger, E. Peterson, J. Ver Hoef, D. Nagel, C. Luce, S. Hostetler, J. Dunham, B. Roper, S. Wollrab, G. Chandler, D. Horan, S. Parkes-Payne. 2017. The NorWeST summer stream temperature model and scenarios for the western U.S.: A crowd-sourced database and new geospatial tools foster a user community and predict broad climate warming of rivers and streams. Water Resources Research, 53:9181-9205. https://doi.org/10.1002/2017WR020969
 
 McNyset, K.M., C.J. Volk, and C.E. Jordan. 2015. Developing an effective model for predicting spatially and temporally continuous stream temperatures from remotely sensed land surface temperatures. Water. 7:6827-6846.
+
+
+# Appendix A: Key Findings from IRA Temperature and Climate Change Assessment
+
+<!--
+I just spewed the below findings out using text from the IRA. Might be nice to summarize this more concisely either as like a table or just simplified under a single header.
+-->
+
+## Lemhi River
+
+### Chinook salmon
+
+Under current conditions, winter and early-spring modeled stream temperatures were below optimum values during egg incubation, fry emergence, juvenile winter rearing, and spring smolt emigration; this can potentially slow incubation and emergence resulting in fry emergence occurring during sub-optimal timing. Low temperatures during winter months can also cease presmolt growth or condition during winter months. Modeled summer temperatures exceed optimum values at times, potentially increasing stress during adult holding and elevating food requirements for summer parr. Under an assumed 3&deg;C increase scenario, winter and spring condtions improved somewhat, but conditions worsen for summer parr and spawners with temperatures exceeding maximum thresholds for Chinook salmon in excess of 50% of the time.
+
+### Steelhead
+
+Under current conditions, winter and early-spring modeled water temperatures were below optimum values for juvenile rearing and spring emigration, likely reducing juvenile growth and condition factors during winter months. Under the assumed 3&deg;C increase scenario, conditions improved for winter and spring life stages; however, conditions worsed during late-spring and summer with temperatures exceeding maximum temperature thresholds for summer juvenile rearing across much of the watershed.
+
+## Pahsimeroi
+
+### Chinook salmon
+
+Under current conditions, stream temperatures in the Pahsimeroi River are rarely below optimum values. However, spring and summer temperatures tend to exceed optimum values for extended periods, potentially increasing stress on adults during staging (holding) and spawning. High spring and summer temperatures can also increase stress during incubation and emergence and increase food requirements for spring smolts and summer parr, potentially decreasing body condition. Under the assumed 3&deg;C increase scenario, conditions worsened for all summer life stages, with water temperatures above optimum for a majority of the time and potentially surpassing acute (lethal) temperatures for holding and spawning adults.
+
+### Steelhead
+
+Although current modeled water temperatures in the Pahsimeroi River seem to be okay for most life stages evaluated, conditons worsen under the 3&deg;C increase scenario with temperatures above optimum, maximum, or acute thresholds during spawining, incubation, emergence, spring smolt emigration, and summer parr rearing life stages.
+
+## Upper Salmon
+
+### Chinook salmon
+
+Under current conditions, modeled stream temperatures are generally within optimum temperatures for each of the life stages evaluated; however, under the 3&deg;C increase scenario conditions again worsen for summer life stages including adult holding and spawning and parr rearing.
+
+### Steelhead
+
+Similar to Chinook salmon, modeled stream temperatures are generally within optimum temperatures for each of the life stages evaluated under current conditions. And again, most notably, under the 3&deg;C increase scenario, summer water temperatures potentially increase to above maximum during portions of spawning and summer parr rearing.
+
