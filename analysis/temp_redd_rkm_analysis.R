@@ -23,20 +23,56 @@ library(readxl)
 # load all of the prepped data
 load("data/mra_temp_rkm_redd_data_prepped.Rdata")
 
+#------------------------------------------
+# summarise McNyset temperature on Aug 29 by RKM
+# what rkm point is closest to each RCAID in the McNyset line layer?
+near_rkm = st_nearest_feature(mra_mcnyset,
+                              mra_rkm)
+# what RCAID in the McNyset line layer is closest to each rkm point?
+near_rcaid = st_nearest_feature(mra_rkm,
+                                mra_mcnyset)
+
+# assign an rkm to each RCAID
+temp_rkm_sf = mra_mcnyset %>%
+  select(watershed, year, variable, RCAID, d241) %>%
+  bind_cols(mra_rkm %>%
+              as_tibble() %>%
+              select(River, rkm) %>%
+              slice(near_rkm))
+
+# for those rkms with missing RCAID, assign their closest one.
+temp_rkm_sf = temp_rkm_sf %>%
+  rbind(mra_mcnyset %>%
+          select(watershed, year, variable, RCAID, d241) %>%
+          inner_join(mra_rkm %>%
+                       as_tibble() %>%
+                       select(River, rkm) %>%
+                       anti_join(temp_rkm_sf %>%
+                                   as_tibble() %>%
+                                   select(River, rkm) %>%
+                                   distinct()) %>%
+                       left_join(mra_rkm %>%
+                                   bind_cols(mra_mcnyset %>%
+                                               as_tibble() %>%
+                                               select(watershed, RCAID) %>%
+                                               slice(near_rcaid)) %>%
+                                   as_tibble() %>%
+                                   select(-geometry))))
+
+# get average temperature on Aug 29 for each rkm
+avg_temp_rkm_sf = temp_rkm_sf %>%
+  arrange(watershed, rkm) %>%
+  group_by(watershed, River, rkm) %>%
+  summarise(n_RCAID = n_distinct(RCAID),
+            mn_max_8d_temp_d241 = mean(d241))
+
+
+
 ##########################################
 # LEMHI RIVER ANALYSIS AND VISUALIZATION #
 ##########################################
-lemh_temp_rkm_sf = mra_mcnyset %>%
-  filter(watershed == "Lemhi") %>%
-  dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
-  st_join(mra_rkm,
-          join = st_nearest_feature,
-          left = TRUE) %>%
-  dplyr::select(- River) %>%
-  arrange(rkm) %>%
-  group_by(rkm) %>%
-  summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
-  filter(!rkm == "92") # there was an odd model estimate at the confluence with Salmon R.
+lemh_temp_rkm_sf = avg_temp_rkm_sf %>%
+  filter(watershed == 'Lemhi')
 
 # map with McNyset Aug 29 modeled temps
 lemh_temp_rkm_map = lemh_temp_rkm_sf %>%
@@ -150,17 +186,21 @@ rm(list = ls(pattern = "^lemh_")) # might make sense to remove this later
 ###############################################
 # PAHSIMEROI RIVER ANALYSIS AND VISUALIZATION #
 ###############################################
-pahs_temp_rkm_sf = mra_mcnyset %>%
-  filter(watershed == "Pahsimeroi") %>%
-  dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
-  st_join(mra_rkm,
-          join = st_nearest_feature,
-          left = TRUE) %>%
-  dplyr::select(- River) %>%
-  arrange(rkm) %>%
-  group_by(rkm) %>%
-  summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
-  filter(!rkm == "86") # observation with an NA at confluence with Salmon R.
+pahs_temp_rkm_sf = avg_temp_rkm_sf %>%
+  filter(watershed == 'Pahsimeroi') %>%
+  filter(rkm != 86) # observation with an NA at confluence with Salmon R.
+
+# pahs_temp_rkm_sf = mra_mcnyset %>%
+#   filter(watershed == "Pahsimeroi") %>%
+#   dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
+#   st_join(mra_rkm,
+#           join = st_nearest_feature,
+#           left = TRUE) %>%
+#   dplyr::select(- River) %>%
+#   arrange(rkm) %>%
+#   group_by(rkm) %>%
+#   summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
+#   filter(!rkm == "86") # observation with an NA at confluence with Salmon R.
 
 # map with McNyset Aug 29 modeled temps
 pahs_temp_rkm_map = pahs_temp_rkm_sf %>%
@@ -260,6 +300,9 @@ rm(list = ls(pattern = "^pahs_")) # might make sense to remove this later
 #################################################
 # UPPER SALMON RIVER ANALYSIS AND VISUALIZATION #
 #################################################
+upsa_temp_rkm_sf = avg_temp_rkm_sf %>%
+  filter(watershed == 'Upper Salmon')
+
 upsa_temp_rkm_sf = mra_mcnyset %>%
   filter(watershed == "Upper Salmon") %>%
   dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
