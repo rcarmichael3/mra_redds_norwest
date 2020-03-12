@@ -281,15 +281,45 @@ pts_df = pts_sf %>%
 # attach rkms to the norwest aug temp dataset
 # what rkm point is closest to each RCAID in the NorWeST line layer?
 near_rkm_nrwst = st_nearest_feature(mra_norwest,
-                              mra_rkm)
+                                    mra_rkm)
 # what COMID in the NorWeST line layer is closest to each rkm point?
 near_comid = st_nearest_feature(mra_rkm,
                                 mra_norwest)
 
+
+# assign an rkm to each RCAID
 aug_temp_rkm = mra_norwest %>%
-  select(FTYPE, NrWST_r, GNIS_NA, COMID, 
+  bind_cols(mra_rkm %>%
+              as_tibble() %>%
+              select(River, rkm) %>%
+              slice(near_rkm_nrwst)) %>%
+  select(River, rkm, FTYPE, NrWST_r, GNIS_NA, COMID, 
          starts_with('S'),
-         -SLOPE) %>%
+         -SLOPE)
+
+# for those rkms with missing COMID, assign their closest one.
+aug_temp_rkm = aug_temp_rkm %>%
+  rbind(mra_norwest %>%
+          inner_join(mra_rkm %>%
+                       st_drop_geometry() %>%
+                       as_tibble() %>%
+                       anti_join(aug_temp_rkm) %>%
+                       left_join(mra_rkm %>%
+                                   bind_cols(aug_temp_rkm %>%
+                                               as_tibble() %>%
+                                               select(GNIS_NA, COMID) %>%
+                                               slice(near_comid)) %>%
+                                   st_drop_geometry() %>%
+                                   as_tibble())) %>%
+          select(one_of(names(aug_temp_rkm)))) %>%
+  group_by(River, rkm, GNIS_NA) %>%
+  summarise_at(vars(starts_with("S")),
+               list(mean)) %>%
+  ungroup() %>%
+  mutate(watershed = str_remove(GNIS_NA, ' River$')) %>%
+  mutate(watershed = recode(watershed, 
+                            "Salmon" = "Upper Salmon")) %>%
+  select(-GNIS_NA) %>%
   gather(scenario, aug_temp, starts_with('S')) %>%
   mutate(scenario_num = str_split(scenario, '_', simplify = T)[,1],
          scenario_num = factor(scenario_num,
@@ -318,23 +348,19 @@ aug_temp_rkm = mra_norwest %>%
                            'S26' = 'Add_2_S1_D',
                            'S27' = 'Add_3_S1',
                            'S28' = 'Add_3_S1_D')) %>%
-  st_join(mra_rkm,
-          join = st_nearest_feature,
-          left = F) %>%
-  # filter(is.na(rkm)) %>%
-  mutate(watershed = str_remove(GNIS_NA, ' River$')) %>%
-  dplyr::select(-FTYPE, -NrWST_r, -COMID, -GNIS_NA, -River) %>%
-  dplyr::select(watershed, rkm, yr, everything()) %>%
-  arrange(watershed, rkm, scenario_num) %>%
-  mutate(watershed = recode(watershed, 
-                            "Salmon" = "Upper_Salmon")) %>%
-  # some rkm's have more than one value, just pick the first
-group_by(watershed, scenario_num, rkm) %>%
-  slice(1) %>%
-  ungroup()
+  select(River, watershed, rkm, yr, scenario, scenario_num, aug_temp, everything()) %>%
+  arrange(watershed, rkm, scenario_num)
 
-# aug_temp_rkm %>% 
-#   group_by(watershed, scenario_num) %>% 
+# # any missing RKM's? 
+# mra_rkm %>%
+#   st_drop_geometry() %>%
+#   as_tibble() %>%
+#   select(River, rkm) %>%
+#   anti_join(aug_temp_rkm)
+
+
+# aug_temp_rkm %>%
+#   group_by(watershed, scenario_num) %>%
 #   # summarise(n_distinct(rkm))
 #   filter(rkm %in% rkm[duplicated(rkm)])
 
@@ -1114,7 +1140,7 @@ coeff = 0.1
 sec_y_0 = 7
 
 aug_temp_rkm %>%
-  filter(watershed == 'Upper_Salmon',
+  filter(watershed == 'Upper Salmon',
          scenario == 'Avg_02_11',
          # scenario == 'S30',
          rkm <= max(upsa_redd_rkm$rkm)) %>%
