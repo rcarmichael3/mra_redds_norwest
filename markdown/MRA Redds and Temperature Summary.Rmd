@@ -174,6 +174,81 @@ thresh_df = mra_threshold %>%
   mutate(start_julian = yday(start_date),
          end_julian = yday(end_date))
 
+
+# summarise McNyset temperature on Aug 29 by RKM
+# what rkm point is closest to each RCAID in the McNyset line layer?
+near_rkm = st_nearest_feature(mra_mcnyset,
+                              mra_rkm)
+# what RCAID in the McNyset line layer is closest to each rkm point?
+near_rcaid = st_nearest_feature(mra_rkm,
+                                mra_mcnyset)
+
+# assign an rkm to each RCAID
+temp_rkm_sf = mra_mcnyset %>%
+  # select(watershed, year, variable, RCAID, d241) %>%
+  bind_cols(mra_rkm %>%
+              as_tibble() %>%
+              select(River, rkm) %>%
+              slice(near_rkm))
+
+# for those rkms with missing RCAID, assign their closest one.
+temp_rkm_sf = temp_rkm_sf %>%
+  rbind(mra_mcnyset %>%
+          # select(watershed, year, variable, RCAID, d241) %>%
+          inner_join(mra_rkm %>%
+                       as_tibble() %>%
+                       select(River, rkm) %>%
+                       anti_join(temp_rkm_sf %>%
+                                   as_tibble() %>%
+                                   select(River, rkm) %>%
+                                   distinct()) %>%
+                       left_join(mra_rkm %>%
+                                   bind_cols(mra_mcnyset %>%
+                                               as_tibble() %>%
+                                               select(watershed, RCAID) %>%
+                                               slice(near_rcaid)) %>%
+                                   as_tibble() %>%
+                                   select(-geometry)))) %>%
+  select(watershed:RCAID, River, rkm, everything()) %>%
+  group_by(watershed, year, variable, RCAID, River, rkm) %>%
+  summarise_at(vars(starts_with("d")),
+               list(mean),
+               na.rm = T) %>%
+  ungroup()
+
+# get average temperature on Aug 29 for each rkm
+avg_temp_rkm_sf = temp_rkm_sf %>%
+  arrange(watershed, rkm) %>%
+  group_by(watershed, River, rkm) %>%
+  summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
+  ungroup()
+
+# a helper function I use below
+round_any = function(x, accuracy, f=round){f(x/ accuracy) * accuracy}
+
+# shapefile with weir locations and Hayden Creek
+pts_sf = st_read("../data/Infrastructure.shp",
+                 quiet = T) %>%
+  st_transform(st_crs(mra_mcnyset)) %>%
+  mutate(label = str_replace_all(Name, ' ', '\n'))
+# change to a data.frame for plotting purposes
+pts_df = pts_sf %>%
+  as_tibble() %>%
+  bind_cols(st_coordinates(pts_sf) %>% 
+              as_tibble())
+```
+
+
+```{r read-in-data-old, eval = F}
+load("../data/mra_temp_rkm_redd_data_prepped.Rdata")
+
+# trim year off of dates in mra_threshold
+thresh_df = mra_threshold %>%
+  mutate(start_date = ymd(start_date) - years(1), # converting to a non-leap year
+         end_date = ymd(end_date) - years(1)) %>%
+  mutate(start_julian = yday(start_date),
+         end_julian = yday(end_date))
+
 # attach rkms to the mcnyset dataset and average temps across modeled years
 temp_rkm = mra_mcnyset %>%
   st_join(mra_rkm,
@@ -204,6 +279,13 @@ pts_df = pts_sf %>%
 
 ```{r}
 # attach rkms to the norwest aug temp dataset
+# what rkm point is closest to each RCAID in the NorWeST line layer?
+near_rkm_nrwst = st_nearest_feature(mra_norwest,
+                              mra_rkm)
+# what COMID in the NorWeST line layer is closest to each rkm point?
+near_comid = st_nearest_feature(mra_rkm,
+                                mra_norwest)
+
 aug_temp_rkm = mra_norwest %>%
   select(FTYPE, NrWST_r, GNIS_NA, COMID, 
          starts_with('S'),
@@ -307,7 +389,7 @@ Finally, life-stage specific temperature criteria were adopted from Carter (2005
 
 ```{r wtsd-spc-ls-analysis}
 # set parameters to create df for wtsd-spc-ls longitudinal temp profile plots
-wtsds = c("Lemhi", "Pahsimeroi", "Upper_Salmon")
+wtsds = c("Lemhi", "Pahsimeroi", "Upper Salmon")
 spcs  = c("chinook", "steelhead")
 lss   = c("adult_holding", "spawning", "incubation", "emergence",
           "summer_parr", "winter_presmolt", "spring_smolt")
@@ -330,7 +412,7 @@ for(wtsd in wtsds) {
         filter(species == spc,
                life_stage == ls)
       
-      # next, get the names of julians within temp_rkm that occur within species x life stage
+      # next, get the names of julians within temp_rkm_sf that occur within species x life stage
       if(unique(spc_ls_thresh$start_julian) < unique(spc_ls_thresh$end_julian)) {
         spc_ls_julians = unique(spc_ls_thresh$start_julian):unique(spc_ls_thresh$end_julian)
       }
@@ -339,7 +421,7 @@ for(wtsd in wtsds) {
                            0:unique(spc_ls_thresh$end_julian))
       }
       spc_ls_julians = paste0("d", str_pad(spc_ls_julians, 3, pad = "0"))
-      spc_ls_julians = spc_ls_julians[spc_ls_julians %in% colnames(temp_rkm)]
+      spc_ls_julians = spc_ls_julians[spc_ls_julians %in% colnames(temp_rkm_sf)]
       
       # extract date_span out of life stage thresholds
       date_span = paste0(str_sub(unique(spc_ls_thresh$start_date), start = -5),
@@ -352,8 +434,8 @@ for(wtsd in wtsds) {
                as.numeric(spc_ls_thresh[i,"temp_c"]))
       }
       
-      # trim temp_rkm for watershed and columns in spc_ls_julians
-      df = temp_rkm %>%
+      # trim temp_rkm_sf for watershed and columns in spc_ls_julians
+      df = temp_rkm_sf %>%
         st_drop_geometry() %>%
         filter(watershed == wtsd) %>%
         filter(rkm %in% rkms) %>%
@@ -427,18 +509,24 @@ This evaluation builds on results presented in Appendix A in the IRA in that it 
 ### Chinook Salmon Redds
 
 ```{r lemh-data}
-# filter, clean lemhi temp data and attach rkm data
-lemh_temp_rkm_sf = mra_mcnyset %>%
-  filter(watershed == "Lemhi") %>%
-  dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = August 29
-  st_join(mra_rkm,
-          join = st_nearest_feature,
-          left = TRUE) %>%
-  dplyr::select(-River) %>%
-  arrange(rkm) %>%
-  group_by(rkm) %>%
-  summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
-  filter(!rkm == "92") # an odd model estimate at confluence with Salmon R.
+# filter Aug 29 temperature data for the Lemhi
+lemh_temp_rkm_sf = avg_temp_rkm_sf %>%
+  filter(watershed == 'Lemhi') %>%
+  filter(rkm < 92) # an odd model estimate at confluence with Salmon R.
+
+
+# lemh_temp_rkm_sf = mra_mcnyset %>%
+#   filter(watershed == "Lemhi") %>%
+#   dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = August 29
+#   st_join(mra_rkm,
+#           join = st_nearest_feature,
+#           left = TRUE) %>%
+#   dplyr::select(-River) %>%
+#   arrange(rkm) %>%
+#   group_by(rkm) %>%
+#   summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
+#   filter(!rkm == "92") # an odd model estimate at confluence with Salmon R.
+
 ```
 
 The distribution of Chinook salmon redd locations in the Lemhi River for years in which survey data were available, along with predictions of the mean of 8-day maximum temperatures for August 29 are shown in Figures \@ref(fig:lemh-temp-redd-map) and \@ref(fig:lemh-redd-map-by-year).
@@ -676,18 +764,23 @@ lt_plot(data = all_data, wtsd = "Lemhi", spc = "steelhead")
 ### Chinook Salmon Redds
 
 ```{r pahs-data}
-# filter, clean pahsimeroi temp data and attach rkm data
-pahs_temp_rkm_sf = mra_mcnyset %>%
-  filter(watershed == "Pahsimeroi") %>%
-  dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
-  st_join(mra_rkm,
-          join = st_nearest_feature,
-          left = TRUE) %>%
-  dplyr::select(- River) %>%
-  arrange(rkm) %>%
-  group_by(rkm) %>%
-  summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
-  filter(!rkm == "86") # observation with an NA at confluence with Salmon R.
+# filter Aug 29 temperature data for the Pahsimeroi
+pahs_temp_rkm_sf = avg_temp_rkm_sf %>%
+  filter(watershed == 'Pahsimeroi') %>%
+  filter(rkm < 86) # observation with an NA at confluence with Salmon R.
+
+# # filter, clean pahsimeroi temp data and attach rkm data
+# pahs_temp_rkm_sf = mra_mcnyset %>%
+#   filter(watershed == "Pahsimeroi") %>%
+#   dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
+#   st_join(mra_rkm,
+#           join = st_nearest_feature,
+#           left = TRUE) %>%
+#   dplyr::select(- River) %>%
+#   arrange(rkm) %>%
+#   group_by(rkm) %>%
+#   summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
+#   filter(!rkm == "86") # observation with an NA at confluence with Salmon R.
 ```
 
 The distribution of Chinook salmon redd locations in the Pahsimeroi River for years in which survey data were available, along with predictions of the mean of 8-day maximum temperatures for August 29 are shown in Figures \@ref(fig:pahs-temp-redd-map) and \@ref(fig:pahs-redd-map-by-year).
@@ -873,17 +966,23 @@ lt_plot(data = all_data, wtsd = "Pahsimeroi", spc = "steelhead")
 ### Chinook Salmon Redds
 
 ```{r upsa-data}
-# filter, clean upper salmon temp data and attach rkm data
-upsa_temp_rkm_sf = mra_mcnyset %>%
-  filter(watershed == "Upper Salmon") %>%
-  dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
-  st_join(mra_rkm,
-          join = st_nearest_feature,
-          left = TRUE) %>%
-  dplyr::select(- River) %>%
-  arrange(rkm) %>%
-  group_by(rkm) %>%
-  summarise(mn_max_8d_temp_d241 = mean(d241))
+# filter Aug 29 temperature data for the Pahsimeroi
+upsa_temp_rkm_sf = avg_temp_rkm_sf %>%
+  filter(watershed == 'Upper Salmon') %>%
+  filter(rkm <= 56)
+
+
+# # filter, clean upper salmon temp data and attach rkm data
+# upsa_temp_rkm_sf = mra_mcnyset %>%
+#   filter(watershed == "Upper Salmon") %>%
+#   dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
+#   st_join(mra_rkm,
+#           join = st_nearest_feature,
+#           left = TRUE) %>%
+#   dplyr::select(- River) %>%
+#   arrange(rkm) %>%
+#   group_by(rkm) %>%
+#   summarise(mn_max_8d_temp_d241 = mean(d241))
 ```
 
 The distribution of Chinook salmon redd locations in the Upper Salmon River (above Redfish Lake Creek) for years in which survey data were available, along with predictions of the mean of 8-day maximum temperatures for August 29 are shown in Figures \@ref(fig:upsa-temp-redd-map) and \@ref(fig:upsa-redd-map-by-year).
@@ -1068,7 +1167,7 @@ rm(list = ls(pattern = "^upsa_")) # might make sense to remove this later
 Figure \@ref(fig:upsa-chnk-lt-plot) reference here...
 
 ```{r upsa-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Upper Salmon River (above Redfish Lake Creek) faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
-lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "chinook")
+lt_plot(data = all_data, wtsd = "Upper Salmon", spc = "chinook")
 ```
 
 #### Steelhead
@@ -1076,7 +1175,7 @@ lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "chinook")
 Figure \@ref(fig:upsa-sthd-lt-plot) reference here...
 
 ```{r upsa-sthd-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Upper Salmon River (above Redfish Lake Creek) faceted by steelhead life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
-lt_plot(data = all_data, wtsd = "Upper_Salmon", spc = "steelhead")
+lt_plot(data = all_data, wtsd = "Upper Salmon", spc = "steelhead")
 ```
 
 # Discussion
