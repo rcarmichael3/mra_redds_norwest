@@ -1,0 +1,1214 @@
+---
+title: "Redd Distribution and Stream Temperature Evaluations for Multiple Reach Assessments"
+author:
+  - name: Mike Ackerman
+    affiliation: Biomark, Inc.
+    email: mike.ackerman@merck.com
+  - name: Richie Carmichael
+    affiliation: Biomark, Inc.
+    email: richard.carmichael@merck.com
+  - name: Kevin See
+    affiliation: Biomark, Inc.
+    email: kevin.see@merck.com
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  bookdown::html_document2:
+    smart: false
+    theme: flatly
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    fig_height: 6
+    fig_width: 8
+    pandoc_args:
+      - --lua-filter=../templates/scholarly-metadata.lua
+      - --lua-filter=../templates/author-info-blocks.lua
+      - --lua-filter=../templates/pagebreak.lua
+  bookdown::word_document2:
+    fig_caption: yes
+    fig_height: 4
+    fig_width: 7
+    toc: yes
+    pandoc_args:
+      - --lua-filter=../templates/scholarly-metadata.lua
+      - --lua-filter=../templates/author-info-blocks.lua
+      - --lua-filter=../templates/pagebreak.lua
+    reference_docx: "../templates/ReportTemplate.docx"
+  bookdown::pdf_document2:
+    fig_height: 6
+    fig_width: 8
+    includes:
+      in_header: "../templates/header_ABS.tex"
+    pandoc_args:
+      - --lua-filter=../templates/scholarly-metadata.lua
+      - --lua-filter=../templates/author-info-blocks2.lua
+      - --lua-filter=../templates/pagebreak.lua
+institute:
+  - biomark: Biomark, Inc.
+csl: "../templates/american-fisheries-society.csl"
+---
+  
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+# load knitr for markdown
+library(knitr)
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+options(knitr.kable.NA = '-')
+options(knitr.table.format = "pandoc")
+
+## load necessary libraryies
+library(readxl)
+library(lubridate)
+library(sf)
+library(raster)
+library(ggplot2)
+library(ggpubr)
+library(ggrepel)
+library(tidyverse)
+
+theme_set(theme_bw())
+
+```
+
+```{r lt-plot-func}
+# longitudinal temperature profile (by wtsd, species, life stage) function used frequently below
+lt_plot = function(data, wtsd, spc) {
+  lt_p = data %>%
+    filter(watershed == wtsd,
+           species == spc) %>%
+    ggplot(aes(x = rkm)) +
+    # longitudinal temp profile
+    geom_line(aes(y = mean_c), colour = "grey40") +
+    geom_smooth(aes(y = mean_c),
+                method = "loess",
+                colour = "black",
+                se = F) +
+    geom_line(aes(y = min_c), colour = "black", linetype = "dashed") +
+    geom_line(aes(y = max_c), colour = "black", linetype = "dashed") +
+    # min temp threshold
+    geom_hline(aes(yintercept = min_th),
+               colour = "blue", linetype = "longdash") +
+    # optimum temp range
+    geom_ribbon(aes(ymin = opt_l_th,
+                    ymax = opt_h_th),
+                fill = "green2",
+                alpha = 0.2) +
+    # max temp threshold
+    geom_hline(aes(yintercept = max_th),
+               colour = "red", linetype = "longdash") +
+    # acute temp threshold
+    geom_hline(aes(yintercept = acute_th),
+               colour = "darkred") +
+    # set axis breaks and limits
+    scale_x_continuous(breaks = seq(0, 150, by = 10)) +
+    scale_y_continuous(breaks = seq(0, 25, by = 2.5)) +
+    # some formatting
+    facet_wrap(~ label) +
+    
+    labs(x = "River Kilometer",
+         y = "Temperature (°C)",
+         title = paste0(str_to_title(spc), ", ", wtsd))
+  lt_p
+}
+
+```
+
+# Introduction
+
+The Bureau of Reclamation (BOR), Idaho Governor's Office of Species Conservation (OSC), and an interdisciplinary team of partners have assembled an Upper Salmon Assessment Team to complete biologic and geomorphic analyses in support of future project identification, prioritization, and design in the Upper Salmon Subbasin, Idaho targeted at improving stream and riparian habitat to support imperiled Chinook salmon and steelhead populations. The biologic and geomorphic analyses are being lead by Biomark, Inc. (Biomark) and Rio Applied Science and Engineering (Rio ASE), respectively. Past efforts from the team resulted in the development of a watershed-scale Integrated Rehabilitation Assessment (IRA; Idaho OSC Team 2019) in the Lemhi, Pahsimeroi, and Upper Salmon (Sawtooth Valley) watersheds. This inital phase of the project identified the "problem" by spatially quantifying capacity limitation for spring/summer chinook salmon and summer run steelhead within a geomorphic context across these threee watersheds. The second phase, termed the Multiple Reach Assessments (MRA), includes identifying appropriate and focused "solutions" to the identified capacity problems within four valley segments: Upper Lemhi, Lower Lemhi, Lower Pahsimeroi,a nd Upper Salmon (Decker Flats). To achieve this goal, the team will collaboratively summarize existing and targeted physical habitat conditions relative to document habitat needs for specific species and life stages, including discussion of high-quality habitat, its creation, and its maintenance to inform future rehabilitation actions.
+
+In the IRA, we determined that available spawning habitat (i.e., redd capacity) was not limiting in any of the target watersheds (Lemhi River, Pahsimeroi River, and upper Salmon River above Redfish Lake Creek) for either Chinook salmon or steelhead. Available spawning capacity was estimated as the total number of redds that each watershed could support and was estimated using quantile regression forest (QRF; Idaho OSC Team 2019, Appendix B) models and the number of redds required to support contemporary escapement or escapement to support recovery goals (e.g., minimum abundance thresholds [MAT]) was estimated using a generalized capacity model (Idaho OSC Team 2019, Appendix C). It was instead concluded that juvenile rearing habitat, during both summer and winter months, was likely limiting productivity of Chinook salmon and steelhead populations in target watersheds. Additionally, life stages not evaluated there (e.g., incubation, fry) may contribute to limited productivity in these populations. With that said, we acknowledge that future habitat actions in the target watershed should attempt to take a "do no harm" approach and minimize any negative impacts to available spawning habitat, especially in existing core spawning areas. But we believe that any appropriate actions to improve juvenile rearing will likely cause minimal or no negative impacts to spawning habitat, especially if habitat complexity (e.g., increased pool frequency with following pool-tail, riffle sequences) is considered. Additionally, if was stated in the IRA that *"providing sufficient adult holding (prespawn) habitat should be considered and would be provided by increased habitat complexity"*. Within the Lemhi, Pahsimeroi, and Upper Salmon watersheds, Chinook salmon may hold in reaches downstream or near the spawning areas in late-July and August prior to the spawning season, a time where high stream temperatures can be problematic. And finally, the Idaho OSC Team found that *"spawning habitat historically occurred farther upstream than current core ares, especially in the Upper Salmon River headwaters, effectively reducing the area currently available for rearing (i.e., area downstream of spawning).* One of the goals of this evaluation is to document the location and distribution of spawning redds in the target watersheds for recent years in which redd surveys were completed and data are available. Redd survey data were made available by the Idaho Department of Fish and Game (IDFG). Here, modeled stream temperatures available from McNyset et al. (2015) are compared to recent redd density data to determine whether temperatures are appropriate or perhaps problematic in those areas; we can also consider areas that may have historically been used for spawning.  
+
+In Appendix A of the IRA report (Idaho OSC Team 2019), we used a combination of modeled temperature predictions (McNyset et al. 2015) and life-stage-specific temperature thresholds (Carter 2005) to evaluate whether current water temperatures might limit the ability of spring-summer run Chinook and summer run steelhead to use available habitat in the Lemhi, Pahsimeroi, and Upper Salmon watersheds. In addition, a simple warming scenario was presented (added 3&deg;C to contemporary modeled temperatures) to describe potential increases in stream temperature expected to result from climate change to assess whether the implementation of restoration actions to reduce temperatures may be necessary to aid recovery of Chinook salmon and steelhead in the watersheds. The following are the key findings from that temperature and climate change assessment:
+
+<!--
+I just spewed the below findings out using text from the IRA. Might be nice to summarize this more concisely either as like a table or just simplified under a single header.
+-->
+
+## Lemhi River
+
+### Chinook salmon
+
+Under current conditions, winter and early-spring modeled stream temperatures were below optimum values during egg incubation, fry emergence, juvenile winter rearing, and spring smolt emigration; this can potentially slow incubation and emergence resulting in fry emergence occurring during sub-optimal timing. Low temperatures during winter months can also cease presmolt growth or condition during winter months. Modeled summer temperatures exceed optimum values at times, potentially increasing stress during adult holding and elevating food requirements for summer parr. Under an assumed 3&deg;C increase scenario, winter and spring condtions improved somewhat, but conditions worsen for summer parr and spawners with temperatures exceeding maximum thresholds for Chinook salmon in excess of 50% of the time.
+
+### Steelhead
+
+Under current conditions, winter and early-spring modeled water temperatures were below optimum values for juvenile rearing and spring emigration, likely reducing juvenile growth and condition factors during winter months. Under the assumed 3&deg;C increase scenario, conditions improved for winter and spring life stages; however, conditions worsed during late-spring and summer with temperatures exceeding maximum temperature thresholds for summer juvenile rearing across much of the watershed.
+
+## Pahsimeroi
+
+### Chinook salmon
+
+Under current conditions, stream temperatures in the Pahsimeroi River are rarely below optimum values. However, spring and summer temperatures tend to exceed optimum values for extended periods, potentially increasing stress on adults during staging (holding) and spawning. High spring and summer temperatures can also increase stress during incubation and emergence and increase food requirements for spring smolts and summer parr, potentially decreasing body condition. Under the assumed 3&deg;C increase scenario, conditions worsened for all summer life stages, with water temperatures above optimum for a majority of the time and potentially surpassing acute (lethal) temperatures for holding and spawning adults.
+
+### Steelhead
+
+Although current modeled water temperatures in the Pahsimeroi River seem to be okay for most life stages evaluated, conditons worsen under the 3&deg;C increase scenario with temperatures above optimum, maximum, or acute thresholds during spawining, incubation, emergence, spring smolt emigration, and summer parr rearing life stages.
+
+## Upper Salmon
+
+### Chinook salmon
+
+Under current conditions, modeled stream temperatures are generally within optimum temperatures for each of the life stages evaluated; however, under the 3&deg;C increase scenario conditions again worsen for summer life stages including adult holding and spawning and parr rearing.
+
+### Steelhead
+
+Similar to Chinook salmon, modeled stream temperatures are generally within optimum temperatures for each of the life stages evaluated under current conditions. And again, most notably, under the 3&deg;C increase scenario, summer water temperatures potentially increase to above maximum during portions of spawning and summer parr rearing.
+
+## Overall Life Stage Specific Temperature Findings from IRA
+
+Not surprisingly, problematic stream temperature condtions were primarily identified during the extreme seasons, winter and summer. During winter and under current conditons, stream temperatures are often below optimum temperatures for juvenile winter rearing. This can results in no growth or loss of body condition prior to the spring emigration season. During summer, modeled stream temperatures were often above optimum or maximum thresholds for adult holding and spawning or summer rearing. Summer conditions worsened under the simple climate change scenario in all cases. High temperatures for adults can result in prespawn mortality or increased stress during spawning behavior. High temperatures for parr increases food requirements which increases energy expenditure to search for food and decreased growth and body conditon, potentially leading to decreased survival during fall or winter months, or forcing individuals to emigrate downstream in search for more optimal fall and winter rearing.
+
+## Objectives
+
+We document the location and distribution of Chinook salmon spawning in the target watersheds and compare redd density summaries to available modeled temperature results. The goal is to make available the distribution of contemporary core spawning areas, examine temperatures in those areas, and examine historic spawning areas, in a spatially explicit (i.e., by river kilometer [rkm]) framework.
+
+Further, we want to examine stream temperatures during critical life stages for Chinook salmon and steelhead in each of the three watersheds (Lemhi, Pahsimeroi, Upper Salmon) and how they compare to temperature thresholds for those species from Carter (2005) in a spatially-explicit manner. By doing this evaluation by rkm, we can identify particular reaches within the watersheds where stream temperatures may be limiting, particularly during winter (juvenile winter rearing) and summer (adult holding, spawning, parr rearing) months identified as problematic in the IRA (Idaho OSC Team 2019).
+
+```{r read-in-data}
+load("../data/mra_temp_rkm_redd_data_prepped.Rdata")
+
+# trim year off of dates in mra_threshold
+thresh_df = mra_threshold %>%
+  mutate(start_date = ymd(start_date) - years(1), # converting to a non-leap year
+         end_date = ymd(end_date) - years(1)) %>%
+  mutate(start_julian = yday(start_date),
+         end_julian = yday(end_date))
+
+
+# summarise McNyset temperature on Aug 29 by RKM
+# what rkm point is closest to each RCAID in the McNyset line layer?
+near_rkm = st_nearest_feature(mra_mcnyset,
+                              mra_rkm)
+# what RCAID in the McNyset line layer is closest to each rkm point?
+near_rcaid = st_nearest_feature(mra_rkm,
+                                mra_mcnyset)
+
+# assign an rkm to each RCAID
+temp_rkm_sf = mra_mcnyset %>%
+  # select(watershed, year, variable, RCAID, d241) %>%
+  bind_cols(mra_rkm %>%
+              as_tibble() %>%
+              select(River, rkm) %>%
+              slice(near_rkm))
+
+# for those rkms with missing RCAID, assign their closest one.
+temp_rkm_sf = temp_rkm_sf %>%
+  rbind(mra_mcnyset %>%
+          # select(watershed, year, variable, RCAID, d241) %>%
+          inner_join(mra_rkm %>%
+                       as_tibble() %>%
+                       select(River, rkm) %>%
+                       anti_join(temp_rkm_sf %>%
+                                   as_tibble() %>%
+                                   select(River, rkm) %>%
+                                   distinct()) %>%
+                       left_join(mra_rkm %>%
+                                   bind_cols(mra_mcnyset %>%
+                                               as_tibble() %>%
+                                               select(watershed, RCAID) %>%
+                                               slice(near_rcaid)) %>%
+                                   as_tibble() %>%
+                                   select(-geometry)))) %>%
+  select(watershed:RCAID, River, rkm, everything()) %>%
+  group_by(watershed, year, variable, RCAID, River, rkm) %>%
+  summarise_at(vars(starts_with("d")),
+               list(mean),
+               na.rm = T) %>%
+  ungroup()
+
+# get average temperature on Aug 29 for each rkm
+avg_temp_rkm_sf = temp_rkm_sf %>%
+  arrange(watershed, rkm) %>%
+  group_by(watershed, River, rkm) %>%
+  summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
+  ungroup()
+
+# a helper function I use below
+round_any = function(x, accuracy, f=round){f(x/ accuracy) * accuracy}
+
+# shapefile with weir locations and Hayden Creek
+pts_sf = st_read("../data/Infrastructure.shp",
+                 quiet = T) %>%
+  st_transform(st_crs(mra_mcnyset)) %>%
+  mutate(label = str_replace_all(Name, ' ', '\n'))
+# change to a data.frame for plotting purposes
+pts_df = pts_sf %>%
+  as_tibble() %>%
+  bind_cols(st_coordinates(pts_sf) %>% 
+              as_tibble())
+```
+
+
+```{r read-in-data-old, eval = F}
+load("../data/mra_temp_rkm_redd_data_prepped.Rdata")
+
+# trim year off of dates in mra_threshold
+thresh_df = mra_threshold %>%
+  mutate(start_date = ymd(start_date) - years(1), # converting to a non-leap year
+         end_date = ymd(end_date) - years(1)) %>%
+  mutate(start_julian = yday(start_date),
+         end_julian = yday(end_date))
+
+# attach rkms to the mcnyset dataset and average temps across modeled years
+temp_rkm = mra_mcnyset %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  dplyr::select(-variable, -RCAID, -River) %>%
+  dplyr::select(watershed, year, rkm, everything()) %>%
+  arrange(watershed, rkm, year) %>%
+  group_by(watershed, rkm) %>%
+  summarise_at(vars(starts_with("d")), list(mean)) %>%
+  ungroup() %>%
+  mutate(watershed = recode(watershed, `Upper Salmon` = "Upper_Salmon"))
+
+# a helper function I use below
+round_any = function(x, accuracy, f=round){f(x/ accuracy) * accuracy}
+
+# shapefile with weir locations and Hayden Creek
+pts_sf = st_read("../data/Infrastructure.shp",
+                 quiet = T) %>%
+  st_transform(st_crs(mra_mcnyset)) %>%
+  mutate(label = str_replace_all(Name, ' ', '\n'))
+# change to a data.frame for plotting purposes
+pts_df = pts_sf %>%
+  as_tibble() %>%
+  bind_cols(st_coordinates(pts_sf) %>% 
+              as_tibble())
+```
+
+```{r}
+# attach rkms to the norwest aug temp dataset
+# what rkm point is closest to each RCAID in the NorWeST line layer?
+near_rkm_nrwst = st_nearest_feature(mra_norwest,
+                              mra_rkm)
+# what COMID in the NorWeST line layer is closest to each rkm point?
+near_comid = st_nearest_feature(mra_rkm,
+                                mra_norwest)
+
+aug_temp_rkm = mra_norwest %>%
+  select(FTYPE, NrWST_r, GNIS_NA, COMID, 
+         starts_with('S'),
+         -SLOPE) %>%
+  gather(scenario, aug_temp, starts_with('S')) %>%
+  mutate(scenario_num = str_split(scenario, '_', simplify = T)[,1],
+         scenario_num = factor(scenario_num,
+                               levels = paste0('S', 1:36)),
+         yr = str_remove(scenario_num, 'S')) %>%
+  mutate_at(vars(yr),
+            list(as.numeric)) %>%
+  filter(yr != 22) %>%
+  mutate(yr = if_else(yr %in% c(3:21, 30, 32, 33:36),
+                      yr, as.numeric(NA))) %>%
+  mutate(yr = if_else(yr %in% c(3:21),
+                      yr + 1990,
+                      yr + 1979),
+         yr = if_else(scenario_num == 'S30',
+                      2040,
+                      yr),
+         yr = if_else(scenario_num == 'S32',
+                      2080,
+                      yr)) %>%
+  mutate(scenario = recode(scenario_num,
+                           'S1' = 'Avg_93_11',
+                           'S2' = 'Avg_02_11',
+                           'S23' = 'Add_1_S1',
+                           'S24' = 'Add_1_S1_D',
+                           'S25' = 'Add_2_S1',
+                           'S26' = 'Add_2_S1_D',
+                           'S27' = 'Add_3_S1',
+                           'S28' = 'Add_3_S1_D')) %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = F) %>%
+  # filter(is.na(rkm)) %>%
+  mutate(watershed = str_remove(GNIS_NA, ' River$')) %>%
+  dplyr::select(-FTYPE, -NrWST_r, -COMID, -GNIS_NA, -River) %>%
+  dplyr::select(watershed, rkm, yr, everything()) %>%
+  arrange(watershed, rkm, scenario_num) %>%
+  mutate(watershed = recode(watershed, 
+                            "Salmon" = "Upper_Salmon")) %>%
+  # some rkm's have more than one value, just pick the first
+group_by(watershed, scenario_num, rkm) %>%
+  slice(1) %>%
+  ungroup()
+
+# aug_temp_rkm %>% 
+#   group_by(watershed, scenario_num) %>% 
+#   # summarise(n_distinct(rkm))
+#   filter(rkm %in% rkm[duplicated(rkm)])
+
+```
+
+
+# Methods
+
+## Data Sources
+
+All data and R code used in this analysis can be found in the `mra_redds_norwest` repository located at https://github.com/rcarmichael3/mra_redds_norwest. The following data sources are used here:
+  
+  ### Redds
+  
+  Chinook salmon redd location data were provided to us by IDFG from redd surveys completed in each of the three watersheds. For the Lemhi River, redd survey data were available for `r min(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Lemhi River")), SurveyYear))` to `r max(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Lemhi River")), SurveyYear))`. Redd data for the Pahsimeroi River were available for `r min(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Pahsimeroi River")), SurveyYear))` to `r max(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Pahsimeroi River")), SurveyYear))`; finally, Upper Salmon redd data were available for `r min(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Salmon River")), SurveyYear))` to `r max(dplyr::select(st_drop_geometry(filter(mra_redds, Waterbody == "Salmon River")), SurveyYear))`.
+
+### River Kilometer
+
+<!--- Richie, you might have to help me explain the rkm dataset here -->
+  
+  River kilometers were defined on the stream network as points and were used to assign redd and temperature to specific river locations along the stream network. In each case, river kilometer (rkm) 0 was defined as the upstream extent of the mainstem river and, for the Lemhi and Pahsimeroi Rivers, the downstream extent was their confluence with the mainstem Salmon River. The downstream extend of the Upper Salmon River watershed was defined as the confluence of the mainstem Salmon River and Little Redfish Lake Creek. The following are rkm 0 for each of the watersheds:
+  
+  * Lemhi River: The confluence of Eighteenmile and Texas Creeks near the Highway 29 bridge in Leadore.
+* Pahsimeroi River: The confluence of the West Fork and East Fork Pahsimeroi River.
+* Upper Salmon River: The origin of the Salmon River.
+
+### Temperature
+
+#### Spatially, Temporally Continuous Modeled Temperature
+
+<!-- Kevin, help me out here if I didn't describe this right -->
+
+Spatially and temporally continuous predictions of stream temperatures were available for the three watersheds from a model described in McNyset et al. (2015). The model uses land surface temperautre (LST) data from the U.S. National Aeronautics and Space Administration's (NASA) Moderate Resolution Imaging Spectroradiometer (MODIS) satellite sensor to help extrapolate stream temperature from stream data loggers. The LST data are available daily at a resolution of 1 square kilometer and are summarized over an 8-day NASA "week". Model results were available for each of the watersheds for the following years:
+  
+  * Lemhi River: `r pull(unique(dplyr::select(st_drop_geometry(filter(mra_mcnyset, watershed == "Lemhi")), year)))`
+* Pahsimeroi River: `r pull(unique(dplyr::select(st_drop_geometry(filter(mra_mcnyset, watershed == "Pahsimeroi")), year)))`
+* Upper Salmon River: `r pull(unique(dplyr::select(st_drop_geometry(filter(mra_mcnyset, watershed == "Upper Salmon")), year)))`
+
+<!-- Need to double-check the following station -->
+  
+  Predictions were available at 8-day intervals and were calculated as the mean of 8-day daily maximum temperatures along stream networks within the three watersheds.
+
+#### NorWeST Temperature
+
+<!-- I'll need Richie's help to describe the NorWeST dataset -->
+  
+  Additionally, stream temperature data were downloaded from the [NorWeST webpage](https://www.fs.fed.us/rm/boise/AWAE/projects/NorWeST.html) and are described by Isaak et al. (2017). Briefly, the NorWeST page hosts various stream temperature historic and future climate scenario datasets at 1-km resolution for streams throughout the Pacific Northwest. In general, the NorWeST approach is to use spatial stream network models to extrapolate between temperature loggers using flow-based directional spatial autocorrelation. They cover a wide range of streams in the western United States, across a number of different years. We describe scenarios used here further below.
+
+#### Life-Stage Temperature Thresholds
+
+Finally, life-stage specific temperature criteria were adopted from Carter (2005) in addition to transition timing of local Chinook salmon and steelhead life stages (USBWP 2004; Personal Communication, Jude Trapani, Bureau of Reclamation; Personal Communication, Mike Edmondson, Idaho Office of Species Conservation; and Personal Communication, Mike Ackerman, Biomark, Inc., Applied Biological Services) to identify minimum, optimal, maximum, and acute temperature thresholds for various life stages of Chinook salmon and steelhead. Temperature thresholds and seasonal timing for Chinook salmon and steelhead are presented in Tables A-1 and A-2 in Appendix A of the IRA (Idaho OSC Team 2019).
+
+```{r wtsd-spc-ls-analysis}
+# set parameters to create df for wtsd-spc-ls longitudinal temp profile plots
+wtsds = c("Lemhi", "Pahsimeroi", "Upper Salmon")
+spcs  = c("chinook", "steelhead")
+lss   = c("adult_holding", "spawning", "incubation", "emergence",
+          "summer_parr", "winter_presmolt", "spring_smolt")
+
+# create blank data frame
+all_data = NULL
+
+# begin watershed x species x life stage loops
+for(wtsd in wtsds) {
+  for(spc in spcs) {
+    for(ls in lss) {
+      
+      # start by setting rkms for the given watershed
+      if(wtsd == "Lemhi")       { rkms = 0:91 }
+      if(wtsd == "Pahsimeroi")  { rkms = 0:85 }
+      if(wtsd == "Upper Salmon"){ rkms = 0:56 }
+      
+      # now, grab the thresholds for a given species x life stage
+      spc_ls_thresh = thresh_df %>%
+        filter(species == spc,
+               life_stage == ls)
+      
+      # next, get the names of julians within temp_rkm_sf that occur within species x life stage
+      if(unique(spc_ls_thresh$start_julian) < unique(spc_ls_thresh$end_julian)) {
+        spc_ls_julians = unique(spc_ls_thresh$start_julian):unique(spc_ls_thresh$end_julian)
+      }
+      if(unique(spc_ls_thresh$start_julian) > unique(spc_ls_thresh$end_julian)) {
+        spc_ls_julians = c(unique(spc_ls_thresh$start_julian):365,
+                           0:unique(spc_ls_thresh$end_julian))
+      }
+      spc_ls_julians = paste0("d", str_pad(spc_ls_julians, 3, pad = "0"))
+      spc_ls_julians = spc_ls_julians[spc_ls_julians %in% colnames(temp_rkm_sf)]
+      
+      # extract date_span out of life stage thresholds
+      date_span = paste0(str_sub(unique(spc_ls_thresh$start_date), start = -5),
+                         " to ", 
+                         str_sub(unique(spc_ls_thresh$end_date), start = -5))
+      
+      # extract thresholds and assign as object
+      for(i in 1:nrow(spc_ls_thresh)) {
+        assign(as.character(spc_ls_thresh[i,"threshold"]),
+               as.numeric(spc_ls_thresh[i,"temp_c"]))
+      }
+      
+      # trim temp_rkm_sf for watershed and columns in spc_ls_julians
+      df = temp_rkm_sf %>%
+        st_drop_geometry() %>%
+        filter(watershed == wtsd) %>%
+        filter(rkm %in% rkms) %>%
+        dplyr::select(rkm, one_of(spc_ls_julians)) %>%
+        gather(key = "julian", value = "temp_c", c(-rkm)) %>%
+        group_by(rkm) %>%
+        summarise(mean_c = mean(temp_c),
+                  min_c = min(temp_c),
+                  max_c = max(temp_c),
+                  sd_c = sd(temp_c),
+                  n = n()) %>%
+        ungroup() %>%
+        mutate(watershed = wtsd,
+               species = spc,
+               life_stage = ls,
+               min_th = minimum,
+               opt_l_th = optimum_low,
+               opt_h_th = optimum_high,
+               max_th = maximum,
+               acute_th = acute,
+               ls_span = date_span) %>%
+        mutate(min_obs_temp = min(min_c),
+               max_obs_temp = max(max_c),
+               max_rkm = max(rkm)) %>%
+        mutate(label = paste(paste0(str_to_title(str_replace(life_stage, "_", " "))),
+                             str_replace_all(date_span, "-", "/"),
+                             sep = "\n"))
+      
+      all_data = rbind(all_data, df)
+      
+    } # end life stage loop
+  } # end species loop
+} # end watershed loop
+```
+
+## Analysis
+
+We describe detailed methods for visualization of redd distribution, stream temperature, river kilometer, and life-stage specific temperature thresholds here for a single watershed. Methods were then similarly applied across each of the watersheds: Lemhi River, Pahsimeroi River, Upper Salmon River (above Redfish Lake Creek).
+
+<!-- 
+  I could probably make these methods a little more dynamic to reflect which temperature dataset and scenario we use for each, but that's for another day. For example, for redds, we could either average across days within the spawning season from McNyset or just choose a julian day within the spawn season (which I did for starters). Alternatively, we could use any number of the NorWeST scenarios, but I wasn't able to immediately find metadata describing each of the scenarios in the dataset.
+-->
+  
+  ### Chinook Salmon Redds
+  
+  1. The spatially, temporally continuous temperature predictions dataset was filtered to only include predictions for a given watershed (e.g., Lemhi) and then we selected predictions for a julian date within the peak of the spawning season (for the McNyset temperature model) or the average August temperature (for the NorWeST temperature model).
+2. River kilometer points were joined to the temperature dataset to assign the spatially continuous temperature predictions to an rkm.
+3. Temperature predictions were average within rkms and across years for which data were available.
+4. Redd locations were joined to the spatially continuous temperature predictions and plotted to show the distribution of redds within a watershed along with the mean of 8-day maximum temperature predictions.
+5. Redd locations were also plotted by survey year to show potential changes in the distribution of redds over time.
+6. Additionally, rkm points were attached to the redd location data to assign each redd to an rkm.
+7. Redd density was calculated as the number of redds per rkm for each year and then averaged across years.
+8. Redd densities, by rkm, were plotted with a longitudinal temperature profile to visualize modeled stream densities where redd densities are highest (or vice-versa).
+
+These plots provide a summary of the current (existing) distribution of Chinook salmon redds in the three watersheds and whether those redds fall within temperatures appropriate for adult holding or spawning. Additionally, we can consider the potential historic distribution of Chinook salmon spawning in those areas. Finally, we, at least initially, present temperature predictions for August 29, here, but the framework allows us to present any historic, contemporary, or future climate change scenario and using either the spatially, temporally continuous dataset (McNyset et al. 2015) or data from NorWeST (Isaak et al. 2017).
+
+### Life Stage Specific Longitudinal Temperature Profiles
+
+1. As before, river kilometer points were joined to the temperature dataset to assign the spatially continuous temperature predictions to an rkm. But here, we still have predictions for all 8-day intervals within the calendar year.
+2. For each watershed, temperature predictions were averaged within rkms and across years to provide the mean of 8-day maximum predictions by rkm and 8-day interval. 
+3. For a given life-stage we filtered the dataset to only include data within the time period for that life stage and then calculated the mean, minimum, and maximum temperature predictions across that time period.
+4. We then plotted a longitudinal temperature profile by watershed, species, and life stage showing the mean, minimum, and maximum temperature predictions for the time interval within the given species x life stage combination.
+5. With the longitudinal temperature profile, we plotted the minimum, optimum, maximum, and acute temperature thresholds from Carter (2005) for the given species and life stage.
+
+This evaluation builds on results presented in Appendix A in the IRA in that it provides a more spatially explicit summary of longitudinal temperature profiles and whether minimum, mean, and maximum stream temperatures fall within or outside of optimum temperatures by species and life stage. We can also identify particular rkms where temperatures fall outside of optimum or other temperature thresholds for sensitive life stages. And as above, the framework will allow us to assess any available historic, contemporary, or potential future scenario. With that said, NorWeST data is targeted towards summer stream temperatures, and thus, could also be summarized for summer life stages (e.g., adult holding and spawning [Chinook only], summer parr).
+
+# Results
+
+## Lemhi River
+
+### Chinook Salmon Redds
+
+```{r lemh-data}
+# filter Aug 29 temperature data for the Lemhi
+lemh_temp_rkm_sf = avg_temp_rkm_sf %>%
+  filter(watershed == 'Lemhi') %>%
+  filter(rkm < 92) # an odd model estimate at confluence with Salmon R.
+
+
+# lemh_temp_rkm_sf = mra_mcnyset %>%
+#   filter(watershed == "Lemhi") %>%
+#   dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = August 29
+#   st_join(mra_rkm,
+#           join = st_nearest_feature,
+#           left = TRUE) %>%
+#   dplyr::select(-River) %>%
+#   arrange(rkm) %>%
+#   group_by(rkm) %>%
+#   summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
+#   filter(!rkm == "92") # an odd model estimate at confluence with Salmon R.
+
+```
+
+The distribution of Chinook salmon redd locations in the Lemhi River for years in which survey data were available, along with predictions of the mean of 8-day maximum temperatures for August 29 are shown in Figures \@ref(fig:lemh-temp-redd-map) and \@ref(fig:lemh-redd-map-by-year).
+
+```{r lemh-temp-redd-map, fig.cap = "Map of Lemhi River showing modeled stream temperatures near the late summer spawning season for Chinook salmon and the distribution of redds (small, open black circles) available from redd surveys in recent years. Modeled temperatures are predictions for August 29 averaged across years where predictions are available."}
+# map lemhi summer temps with redd locations
+lemh_temp_rkm_redds_map = lemh_temp_rkm_sf %>%
+  ggplot() +
+  geom_sf(aes(color = mn_max_8d_temp_d241),
+          size = 4) +
+  scale_colour_distiller(palette = "Spectral") +
+  geom_sf(data = mra_redds %>%
+            filter(Waterbody == "Lemhi River"),
+          size = 1,
+          shape = 1) +
+  labs(title = "Lemhi River",
+       colour = "Mean of 8-day Max Temps\nAug 29 (°C)" ) +
+  theme(axis.title = element_blank())
+# lemh_temp_rkm_redds_map
+
+lemh_temp_rkm_redds_map +
+  geom_label_repel(data = pts_df %>%
+                     filter(Watershed == 'Lemhi'),
+                   aes(x = X,
+                       y = Y,
+                       label = label),
+                   nudge_x = -10000)
+
+```
+
+```{r lemh-redd-map-by-year, fig.cap = "Same as figure above, except faceted by survey year to show years for which data are available and how the distribution of redds potentially changed."}
+# the above, but facetted by year
+lemh_temp_rkm_redds_yr_map = lemh_temp_rkm_redds_map +
+  facet_wrap(~ SurveyYear) +
+  theme(legend.position = 'bottom',
+        axis.text.x = element_text(angle = -45, vjust = 0))
+lemh_temp_rkm_redds_yr_map
+```
+
+```{r lemh-redd-map-nrwt, eval = F}
+lemh_nrw_temp_rkm_redds_map = aug_temp_rkm %>%
+  filter(watershed == 'Lemhi',
+         scenario == 'Avg_02_11') %>%
+  ggplot() +
+  geom_sf(aes(color = aug_temp),
+          size = 4) +
+  scale_colour_distiller(palette = "Spectral") +
+  geom_sf(data = mra_redds %>%
+            filter(Waterbody == "Lemhi River"),
+          size = 1,
+          shape = 1) +
+  labs(title = "Lemhi River",
+       colour = "Avg. Aug.\nTemperature (°C)" ) +
+  theme(axis.title = element_blank())
+
+
+redd_yrs = mra_redds %>%
+  filter(Waterbody == "Lemhi River") %>%
+  pull(SurveyYear) %>%
+  unique()
+nrwst_yrs = aug_temp_rkm %>%
+  filter(watershed == 'Lemhi',
+         !is.na(yr)) %>%
+  pull(yr) %>%
+  unique()
+
+lemh_nrw_temp_rkm_redds_yr_map = aug_temp_rkm %>%
+  filter(watershed == 'Lemhi',
+         !is.na(yr)) %>%
+  filter(yr %in% redd_yrs) %>%
+  rename(SurveyYear = yr) %>%
+  ggplot() +
+  geom_sf(aes(color = aug_temp),
+          size = 4) +
+  scale_colour_distiller(palette = "Spectral") +
+  geom_sf(data = mra_redds %>%
+            filter(Waterbody == "Lemhi River",
+                   SurveyYear %in% nrwst_yrs),
+          size = 1,
+          shape = 1) +
+  facet_wrap(~ SurveyYear) +
+  theme(legend.position = 'bottom',
+        axis.title = element_blank(),
+        axis.text.x = element_text(angle = -45, vjust = 0)) +
+  labs(title = "Lemhi River",
+       colour = "Avg. Aug.\nTemperature (°C)" )
+```
+
+
+
+Figure \@ref(fig:lemh-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:lemh-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted mean August temperature, averaged across years 2002-2011.
+
+```{r lemh-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Lemhi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Lemhi River and occurs at the Highway 29 bridge near Leadore and the confluence of Eighteenmile and Texas Creeks. River kilometer 91 is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+# calculate average redds per rkm
+lemh_redd_rkm = mra_redds %>%
+  filter(Waterbody == "Lemhi River") %>%
+  dplyr::select(Waterbody, Species, SurveyYear, StartDate, Longitude, Latitude) %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  group_by(rkm, SurveyYear) %>%
+  summarise(n_redds = n()) %>%
+  ungroup() %>%
+  complete(rkm = 0:91, SurveyYear, fill = list(n_redds = 0)) %>% # need to set max rkm here
+  dplyr::select(- geometry) %>%
+  group_by(rkm) %>%
+  summarise(mean_redds_km = mean(n_redds)) %>%
+  ungroup()
+
+# mra_threshold %>%
+#   filter(species == 'chinook',
+#          life_stage == 'spawning')
+
+# longitudinal temperature profile, with redd densities
+coeff = 0.5
+sec_y_0 = 12
+lemh_temp_rkm_sf %>%
+  full_join(lemh_redd_rkm) %>%
+  ggplot(aes(x = rkm)) +
+    # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
+  geom_line(aes(y = mn_max_8d_temp_d241), 
+            size = 1.1, 
+            color = "black") +
+  geom_smooth(aes(y = mn_max_8d_temp_d241),
+              method = "loess",
+              se = F,
+              size = 1,
+              color = "red3") +
+  # other thresholds
+  geom_hline(yintercept = c(18, 20),
+             linetype = 2) +
+  geom_bar(aes(y = (mean_redds_km * coeff) + sec_y_0),
+           stat = "identity",
+           alpha = 0.3,
+           fill = "steelblue4",
+           color = "steelblue4") +
+  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
+  scale_y_continuous(breaks = seq(0, 17, by = 1),
+                     sec.axis = sec_axis(~ (. - sec_y_0) / coeff ,
+                                         name = "Mean Redd Density (redds/km)")) +
+  coord_cartesian(ylim = c(sec_y_0, 16.5),
+                  expand = F) +
+  labs(x = "River Kilometer",
+       y = "Mean of 8-day Max Temp, Aug 29 (°C)",
+       title = "Lemhi River")
+```
+
+```{r lemh-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Lemhi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Lemhi River and occurs at the Highway 29 bridge near Leadore and the confluence of Eighteenmile and Texas Creeks. River kilometer 91 is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+
+# longitudinal NorWeST temperature profile, with redd densities
+# aug_temp_rkm %>%
+#   filter(watershed == 'Lemhi',
+#          scenario == 'Avg_02_11') %>%
+#   summarise_at(vars(aug_temp),
+#                list(min, max))
+# 
+# max(lemh_redd_rkm$mean_redds_km)
+# (16.8 - 10.2) / 6.79
+
+
+coeff = 0.9
+sec_y_0 = 10
+
+aug_temp_rkm %>%
+  filter(watershed == 'Lemhi',
+         scenario == 'Avg_02_11') %>%
+  full_join(lemh_redd_rkm) %>%
+  # filter(rkm %in% rkm[duplicated(rkm)])
+  ggplot(aes(x = rkm)) +
+  # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
+  geom_line(aes(y = aug_temp), 
+            size = 1.1, 
+            color = "black") +
+  geom_smooth(aes(y = aug_temp),
+              method = "loess",
+              se = F,
+              size = 1,
+              color = "red3") +
+  # other thresholds
+  geom_hline(yintercept = c(18, 20),
+             linetype = 2) +
+  geom_bar(aes(y = (mean_redds_km * coeff) + sec_y_0),
+           stat = "identity",
+           alpha = 0.3,
+           fill = "steelblue4",
+           color = "steelblue4") +
+  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
+  scale_y_continuous(breaks = seq(0, 17, by = 1),
+                     sec.axis = sec_axis(~ (. - sec_y_0) / coeff ,
+                                         name = "Mean Redd Density (redds/km)")) +
+  coord_cartesian(ylim = c(sec_y_0, 16.5),
+                  expand = F) +
+  labs(x = "River Kilometer",
+       y = "Mean Aug Temp (°C)",
+       title = "Lemhi River")
+
+```
+
+```{r}
+# removing objects that begin with
+rm(list = ls(pattern = "^lemh_")) # might make sense to remove this later
+```
+
+
+### Life Stage Specific Longitudinal Temperature Profiles
+
+#### Chinook salmon
+
+Figure \@ref(fig:lemh-chnk-lt-plot) reference here...
+
+```{r lemh-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Salmon River faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
+lt_plot(data = all_data, wtsd = "Lemhi", spc = "chinook")
+```
+
+#### Steelhead
+
+Figure \@ref(fig:lemh-sthd-lt-plot) reference here...
+
+```{r lemh-sthd-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Salmon River faceted by steelhead life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
+lt_plot(data = all_data, wtsd = "Lemhi", spc = "steelhead")
+```
+
+## Pahsimeroi River
+
+### Chinook Salmon Redds
+
+```{r pahs-data}
+# filter Aug 29 temperature data for the Pahsimeroi
+pahs_temp_rkm_sf = avg_temp_rkm_sf %>%
+  filter(watershed == 'Pahsimeroi') %>%
+  filter(rkm < 86) # observation with an NA at confluence with Salmon R.
+
+# # filter, clean pahsimeroi temp data and attach rkm data
+# pahs_temp_rkm_sf = mra_mcnyset %>%
+#   filter(watershed == "Pahsimeroi") %>%
+#   dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
+#   st_join(mra_rkm,
+#           join = st_nearest_feature,
+#           left = TRUE) %>%
+#   dplyr::select(- River) %>%
+#   arrange(rkm) %>%
+#   group_by(rkm) %>%
+#   summarise(mn_max_8d_temp_d241 = mean(d241)) %>%
+#   filter(!rkm == "86") # observation with an NA at confluence with Salmon R.
+```
+
+The distribution of Chinook salmon redd locations in the Pahsimeroi River for years in which survey data were available, along with predictions of the mean of 8-day maximum temperatures for August 29 are shown in Figures \@ref(fig:pahs-temp-redd-map) and \@ref(fig:pahs-redd-map-by-year).
+
+```{r pahs-temp-redd-map, fig.cap = "Map of Pahsimeroi River showing modeled stream temperatures near the late summer spawning season for Chinook salmon and the distribution of redds (small, open black circles) available from redd surveys in recent years. Modeled temperatures are predictions for August 29 averaged across years where predictions are available."}
+# map pahs summer temps with redd locations
+pahs_temp_rkm_redds_map = pahs_temp_rkm_sf %>%
+  ggplot() +
+  geom_sf(aes(color = mn_max_8d_temp_d241),
+          size = 4) +
+  scale_colour_distiller(palette = "Spectral") +
+  geom_sf(data = mra_redds %>%
+            filter(Waterbody == "Pahsimeroi River"),
+          size = 1,
+          shape = 1) +
+  
+  labs(title = "Pahsimeroi River",
+       colour = "Mean of 8-day Max Temps\nAug 29 (°C)") +
+  theme(axis.title = element_blank())
+# pahs_temp_rkm_redds_map
+# ha, note that all the redds appear to be low, presumably below the weir
+# I suspect these are largely hatchery redds
+
+pahs_temp_rkm_redds_map +
+  geom_label_repel(data = pts_df %>%
+                  filter(Watershed == 'Pahsimeroi'),
+                   aes(x = X,
+                       y = Y,
+                       label = label),
+                  nudge_x = 20000)
+
+
+```
+
+```{r pahs-redd-map-by-year, fig.cap = "Same as figure above, except faceted by survey year to show years for which data are available and how the distribution of redds potentially changed."}
+# the above, but facetted by year
+pahs_temp_rkm_redds_yr_map = pahs_temp_rkm_redds_map +
+  facet_wrap(~ SurveyYear) +
+  theme(legend.position = 'bottom',
+        axis.text.x = element_text(angle = -45, vjust = 0))
+pahs_temp_rkm_redds_yr_map
+```
+
+Figure \@ref(fig:pahs-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:pahs-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted mean August temperature, averaged across years 2002-2011.
+
+```{r pahs-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Pahsimeroi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Pahsimeroi River and occurs at the confluence of the West Fork and East Fork Pahsimeroi River. River kilometer 85, the downstream extent is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+# calculate average redds per rkm
+pahs_redd_rkm = mra_redds %>%
+  filter(Waterbody == "Pahsimeroi River") %>%
+  dplyr::select(Waterbody, Species, SurveyYear, StartDate, Longitude, Latitude) %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  group_by(rkm, SurveyYear) %>%
+  summarise(n_redds = n()) %>%
+  ungroup() %>%
+  complete(rkm = 0:85, SurveyYear, fill = list(n_redds = 0)) %>% # need to set max rkm here
+  dplyr::select(- geometry) %>%
+  group_by(rkm) %>%
+  summarise(mean_redds_km = mean(n_redds)) %>%
+  ungroup()
+
+# longitudinal temperature profile, with redd densities
+coeff = 0.4
+sec_y_0 = 11
+pahs_temp_rkm_sf %>%
+  full_join(pahs_redd_rkm) %>%
+  ggplot(aes(x = rkm)) +
+  # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
+  geom_line(aes(y = mn_max_8d_temp_d241), 
+            size = 1.1, 
+            color = "black") +
+  geom_smooth(aes(y = mn_max_8d_temp_d241),
+              method = "loess",
+              se = F,
+              size = 1,
+              color = "red3") +
+  # other thresholds
+  geom_hline(yintercept = c(18, 20),
+             linetype = 2) +
+  geom_bar(aes(y = (mean_redds_km * coeff) + sec_y_0),
+           stat = "identity",
+           alpha = 0.3,
+           fill = "steelblue4",
+           color = "steelblue4") +
+  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
+  scale_y_continuous(breaks = seq(0, 18, by = 1),
+                     sec.axis = sec_axis(~ (. - sec_y_0) / coeff ,
+                                         name = "Mean Redd Density (redds/km)")) +
+  coord_cartesian(ylim = c(sec_y_0, 16.5),
+                  expand = F) +
+  labs(x = "River Kilometer",
+       y = "Mean of 8-day Max Temp, Aug 29 (°C)",
+       title = "Pahsimeroi River")
+```
+
+```{r pahs-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Pahsimeroi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Pahsimeroi River and occurs at the confluence of the West Fork and East Fork Pahsimeroi River. River kilometer 85, the downstream extent is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+
+# longitudinal NorWeST temperature profile, with redd densities
+# aug_temp_rkm %>%
+#   filter(watershed == 'Pahsimeroi',
+#          scenario == 'Avg_02_11') %>%
+#   summarise_at(vars(aug_temp),
+#                list(min, max))
+# # summary(pahs_redd_rkm$mean_redds_km)
+# max(pahs_redd_rkm$mean_redds_km)
+# (14.3 - 7.3) / 12.6
+
+coeff = 0.55
+sec_y_0 = 7
+
+aug_temp_rkm %>%
+  filter(watershed == 'Pahsimeroi',
+         # scenario == 'Avg_02_11') %>%
+         scenario == 'S30') %>%
+  full_join(pahs_redd_rkm) %>%
+  ggplot(aes(x = rkm)) +
+  # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
+  geom_line(aes(y = aug_temp), 
+            size = 1.1, 
+            color = "black") +
+  geom_smooth(aes(y = aug_temp),
+              method = "loess",
+              se = F,
+              size = 1,
+              color = "red3") +
+  # other thresholds
+  geom_hline(yintercept = c(18, 20),
+             linetype = 2) +
+  geom_bar(aes(y = (mean_redds_km * coeff) + sec_y_0),
+           stat = "identity",
+           alpha = 0.3,
+           fill = "steelblue4",
+           color = "steelblue4") +
+  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
+  scale_y_continuous(breaks = seq(0, 17, by = 1),
+                     sec.axis = sec_axis(~ (. - sec_y_0) / coeff ,
+                                         name = "Mean Redd Density (redds/km)")) +
+  coord_cartesian(ylim = c(sec_y_0, 16.5),
+                  expand = F) +
+  labs(x = "River Kilometer",
+       y = "Mean Aug Temp (°C)",
+       title = "Pahsimeroi River")
+
+```
+
+
+```{r}
+# removing objects that begin with
+rm(list = ls(pattern = "^pahs_")) # might make sense to remove this later
+```
+
+### Life Stage Specific Longitudinal Temperature Profiles
+
+#### Chinook salmon
+
+Figure \@ref(fig:pahs-chnk-lt-plot) reference here...
+
+```{r pahs-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Pahsimeroi River faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
+lt_plot(data = all_data, wtsd = "Pahsimeroi", spc = "chinook")
+```
+
+#### Steelhead
+
+Figure \@ref(fig:pahs-sthd-lt-plot) reference here...
+
+```{r pahs-sthd-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Pahsimeroi River faceted by steelhead life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
+lt_plot(data = all_data, wtsd = "Pahsimeroi", spc = "steelhead")
+```
+
+## Upper Salmon River
+
+### Chinook Salmon Redds
+
+```{r upsa-data}
+# filter Aug 29 temperature data for the Pahsimeroi
+upsa_temp_rkm_sf = avg_temp_rkm_sf %>%
+  filter(watershed == 'Upper Salmon') %>%
+  filter(rkm <= 56)
+
+
+# # filter, clean upper salmon temp data and attach rkm data
+# upsa_temp_rkm_sf = mra_mcnyset %>%
+#   filter(watershed == "Upper Salmon") %>%
+#   dplyr::select(watershed, year, variable, RCAID, d241) %>% # day 241 = Aug 29
+#   st_join(mra_rkm,
+#           join = st_nearest_feature,
+#           left = TRUE) %>%
+#   dplyr::select(- River) %>%
+#   arrange(rkm) %>%
+#   group_by(rkm) %>%
+#   summarise(mn_max_8d_temp_d241 = mean(d241))
+```
+
+The distribution of Chinook salmon redd locations in the Upper Salmon River (above Redfish Lake Creek) for years in which survey data were available, along with predictions of the mean of 8-day maximum temperatures for August 29 are shown in Figures \@ref(fig:upsa-temp-redd-map) and \@ref(fig:upsa-redd-map-by-year).
+
+```{r upsa-temp-redd-map, fig.cap = "Map of Upper Salmon River (above Redfish Lake) showing modeled stream temperatures near the late summer spawning season for Chinook salmon and the distribution of redds (small, open black circles) available from redd surveys in recent years. Modeled temperatures are predictions for August 29 averaged across years where predictions are available."}
+# map upsa summer temps with redd locations
+# what is the easiest way to remove redds in the below plot that are x distance
+# away from the mra_mcnyset line?
+upsa_temp_rkm_redds_map = upsa_temp_rkm_sf %>%
+  ggplot() +
+  geom_sf(aes(color = mn_max_8d_temp_d241),
+          size = 4) +
+  scale_colour_distiller(palette = "Spectral") +
+  geom_sf(data = mra_redds %>%
+            filter(Waterbody == "Salmon River") %>%
+            st_intersection(upsa_temp_rkm_sf %>%
+                              st_make_grid(n = 1)),
+          size = 1,
+          shape = 1) +
+  # coord_sf(crs = 4326, # changing the coord_sf to widen the map
+  #          xlim = c(-114.96, -114.65),
+  #          expand = T) +
+  coord_sf(crs = 32612, # changing the coord_sf to widen the map
+           xlim = as.vector(st_bbox(upsa_temp_rkm_sf)[c(1,3)] + c(-1,1) * 4000),
+           expand = T) +
+  
+  labs(title = "Salmon River",
+       colour = "Mean of 8-day Max Temps\nAug 29 (°C)") +
+  theme(axis.title = element_blank(),
+        axis.text.x = element_text(angle = -45, vjust = 0))
+# upsa_temp_rkm_redds_map
+
+upsa_temp_rkm_redds_map +
+  geom_label_repel(data = pts_df %>%
+                     filter(Watershed == 'Upper Salmon'),
+                   aes(x = X,
+                       y = Y,
+                       label = label),
+                   nudge_x = 10000)
+
+
+```
+
+```{r upsa-redd-map-by-year, fig.cap = "Same as figure above, except faceted by survey year to show years for which data are available and how the distribution of redds potentially changed."}
+# the above, but facetted by year
+upsa_temp_rkm_redds_yr_map = upsa_temp_rkm_redds_map +
+  facet_wrap(~ SurveyYear) +
+  theme(legend.position = 'bottom',
+        axis.text = element_text(size = 5),
+        axis.text.x = element_text(angle = -45, vjust = 0))
+upsa_temp_rkm_redds_yr_map
+```
+
+Figure \@ref(fig:upsa-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:upsa-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted mean August temperature, averaged across years 2002-2011.
+
+```{r upsa-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Upper Salmon River (above Redfish Lake Creek) averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Upper Salmon River at its source. River kilometer 56, the downstream extent, is at its confluence with Redfish Lake Creek. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+# calculate average redds per rkm
+upsa_redd_rkm = mra_redds %>%
+  filter(Waterbody == "Salmon River") %>%
+  st_intersection(upsa_temp_rkm_sf %>%
+                    st_make_grid(n = 1)) %>%
+  dplyr::select(Waterbody, Species, SurveyYear, StartDate, Longitude, Latitude) %>%
+  st_join(mra_rkm,
+          join = st_nearest_feature,
+          left = TRUE) %>%
+  filter(rkm <= 56) %>%
+  group_by(rkm, SurveyYear) %>%
+  summarise(n_redds = n()) %>%
+  ungroup() %>%
+  complete(rkm = 0:56, SurveyYear, fill = list(n_redds = 0)) %>% # need to set max rkm here
+  dplyr::select(- geometry) %>%
+  group_by(rkm) %>%
+  summarise(mean_redds_km = mean(n_redds)) %>%
+  ungroup()
+
+# longitudinal temperature profile, with redd densities
+coeff = 0.05
+sec_y_0 = 13
+upsa_temp_rkm_sf %>%
+  full_join(upsa_redd_rkm) %>%
+  ggplot(aes(x = rkm)) +
+  # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
+  geom_line(aes(y = mn_max_8d_temp_d241), 
+            size = 1.1, 
+            color = "black") +
+  geom_smooth(aes(y = mn_max_8d_temp_d241),
+              method = "loess",
+              se = F,
+              size = 1,
+              color = "red3") +
+  # other thresholds
+  geom_hline(yintercept = c(18, 20),
+             linetype = 2) +
+  geom_bar(aes(y = (mean_redds_km * coeff) + sec_y_0),
+           stat = "identity",
+           alpha = 0.3,
+           fill = "steelblue4",
+           color = "steelblue4") +
+  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
+  scale_y_continuous(breaks = seq(0, 18, by = 1),
+                     sec.axis = sec_axis(~ (. - sec_y_0) / coeff ,
+                                         name = "Mean Redd Density (redds/km)")) +
+  coord_cartesian(ylim = c(sec_y_0, 16.5),
+                  expand = F) +
+  labs(x = "River Kilometer",
+       y = "Mean of 8-day Max Temp, Aug 29 (°C)",
+       title = "Upper Salmon River")
+```
+
+```{r upsa-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Upper Salmon River (above Redfish Lake Creek) averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Upper Salmon River at its source. River kilometer 56, the downstream extent, is at its confluence with Redfish Lake Creek. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+
+# longitudinal NorWeST temperature profile, with redd densities
+# aug_temp_rkm %>%
+#   filter(watershed == 'Upper_Salmon',
+#          scenario == 'Avg_02_11',
+#          rkm <= max(upsa_redd_rkm$rkm)) %>%
+#   summarise_at(vars(aug_temp),
+#                list(min, max))
+# # summary(pahs_redd_rkm$mean_redds_km)
+# max(upsa_redd_rkm$mean_redds_km)
+# (13.6 - 7.23) / 56
+
+coeff = 0.1
+sec_y_0 = 7
+
+aug_temp_rkm %>%
+  filter(watershed == 'Upper_Salmon',
+         scenario == 'Avg_02_11',
+         # scenario == 'S30',
+         rkm <= max(upsa_redd_rkm$rkm)) %>%
+  full_join(upsa_redd_rkm) %>%
+  ggplot(aes(x = rkm)) +
+  # optimum spawning temp range
+  geom_ribbon(aes(ymin = 7.2, 
+                  ymax = 14.5),
+              fill = "green2",
+              alpha = 0.2) +
+  # modeled temperature
+  geom_line(aes(y = aug_temp), 
+            size = 1.1, 
+            color = "black") +
+  geom_smooth(aes(y = aug_temp),
+              method = "loess",
+              se = F,
+              size = 1,
+              color = "red3") +
+  # other thresholds
+  geom_hline(yintercept = c(18, 20),
+             linetype = 2) +
+  geom_bar(aes(y = (mean_redds_km * coeff) + sec_y_0),
+           stat = "identity",
+           alpha = 0.3,
+           fill = "steelblue4",
+           color = "steelblue4") +
+  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
+  scale_y_continuous(breaks = seq(0, 17, by = 1),
+                     sec.axis = sec_axis(~ (. - sec_y_0) / coeff ,
+                                         name = "Mean Redd Density (redds/km)")) +
+  coord_cartesian(ylim = c(sec_y_0, 16.5),
+                  expand = F) +
+  labs(x = "River Kilometer",
+       y = "Mean Aug Temp (°C)",
+       title = "Upper Salmon River")
+
+```
+
+
+```{r}
+# removing objects that begin with
+rm(list = ls(pattern = "^upsa_")) # might make sense to remove this later
+```
+
+### Life Stage Specific Longitudinal Temperature Profiles
+
+#### Chinook salmon
+
+Figure \@ref(fig:upsa-chnk-lt-plot) reference here...
+
+```{r upsa-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Upper Salmon River (above Redfish Lake Creek) faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
+lt_plot(data = all_data, wtsd = "Upper Salmon", spc = "chinook")
+```
+
+#### Steelhead
+
+Figure \@ref(fig:upsa-sthd-lt-plot) reference here...
+
+```{r upsa-sthd-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Upper Salmon River (above Redfish Lake Creek) faceted by steelhead life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
+lt_plot(data = all_data, wtsd = "Upper Salmon", spc = "steelhead")
+```
+
+# Discussion
+
+Still need to add some discussion...
+
+The main things that come to my (MA) mind:
+
+* Redd locations (i.e., the core spawning areas) in the Lemhi River do seem to occur where stream temperatures are appropriate or okay. Interesting. I'm wondering, does historic redd distribution information suggest redds lower in system if and when stream temps were cooler prior to so much irrigation during summer months? But it does seem that temperatures are okay in the current core spawning area.
+* On the contrary, redd distributions in the Pahsimeroi and Upper Salmon occur in areas where temps seem way too high. Couple things...redds are largely constrained to occur below the weirs. Those redds, too, are likely dominated by hatchery fish. Has the presence of a weir hindered the ability or encouraged wild fish to spawn low in the systems where stream temps are too high? And for those few wild redds that do occur below the weirs, they are probably dominated or overrun by hatchery redds. I wouldn't doubt if there's imposition of redds in those limited locations. In Pahsimeroi, I don't have a great sense for how much appropriate spawning areas there are above the weir, but at least some of the habitat Richie and I walked, particularly in Patterson Creek, seemed like decent spawning habitat that, at least according to this data, doesn't seem to be getting used.
+* Temperatures during the extreme seasons (mid-summer and mid-winter) do seem to be limiting. High summer temps likely cause stress for holding and spawning adults, potentially causing pre-spawn mortality or reduced fitness during spawning. And high temps likely increase 'metabolic stress' and food requirements for parr, also perhaps increasing stress and decreasing body condition prior to fall and spring. Does that encourage the presmolt life history? Further temperatures during the winter are too low for winter rearing, which isn't surprising, but can temperatures be mediated during these extreme seasons. It seems that hyporheic exchange may be key to moderating temps during the extreme seasons! More evidence to increase complexity, channel unit frequency, etc.
+
+Thoughts from Kevin:
+
+* Chinook are spawning in the coolest part of the Lemhi watershed, and the temperatures there are well within the optimum temperature for spawning. Also curious if there's historical data or anecdotal evidence that spawning used to occur lower in the watershed, and/or if temperatures were cooler there prior to irrigation withdrawals. 
+* In the Pahsimeroi, all the spawning seems to be occuring in the lower 25 km of the river, which does **not** correspond with the coolest temperatures. In fact, the lowest 20 km (from rkm 65) appears to be routinely above the optimum temperature range for spawning, and yet that's where the highest redd densities are. Is the weir having any effect on how far salmon are willing to travel upstream to spawn? The spawning pattern (Figure \@ref(fig:pahs-redd-map-by-year)) seems pretty consistent across the years we've examined here.
+* On the other hand, there seems to be more variability in the spawning pattern in the Upper Salmon (Figure \@ref(fig:upsa-redd-map-by-year)). Like the Pahsimeroi, most of the spawning generally seems to occur in the lower watershed, within the lowest 5 km. This area appears to be on the upper edge of the optimum spawning temperature, and as one moves upstream, the temperatures then rise. So perhaps fish sense warming temperatures as they are moving upstream, and eventually decide to spawn before it gets too warm, but also before they reach the coolest waters near the upper part of the watershed.
+* Using the predictions of 8-day means of the max temperatures from McNyset at the end of August paints a different picture than using the 2002-2011 average predictions for August from NorWeST. The NorWeST longitudinal profiles indicate that the entirety of each watershed has temperatures in the optimum range for spawning, suggesting there are potentially other factors influencing the patterns of redd distribution.
+
+* Temperatures appear too cold for the winter juvenile stage for both species in all watersheds. However, the thresholds defined in Carter (2005) do not mention overwintering specifically, and the winter thresholds applied here are the same as for summer juveniles. Those are based in part on the ability of a fish to grow, and if they are not growing and/or feeding much in the winter, these thresholds may not be appropriate. The same threshold were applied to spring smolts, but I'm unclear how much growth should factor into smolt habitat suitability. 
+
+
+
+## Conclusions
+
+The main takeaways...
+
+# Literature Cited
+
+Carter, K. 2005. The effects of temperature on steelhead trout, Coho salmon, and Chinook salmon biology and function by life stage. Implications for Klamath Basin TMDLs. California Regional Water Quality Control Board. North Coast Region. 26 pp.
+
+Idaho OSC Team (Idaho Governor’s Office of Species Conservation and partners). 2019. Upper Salmon Subbasin Habitat Integrated Rehabilitation Assessment. Assessment prepared for and with the U.S. Department of the Interior, Bureau of Reclamation. June 2019. 625 pp.
+
+Isaak, D., S. Wenger, E. Peterson, J. Ver Hoef, D. Nagel, C. Luce, S. Hostetler, J. Dunham, B. Roper, S. Wollrab, G. Chandler, D. Horan, S. Parkes-Payne. 2017. The NorWeST summer stream temperature model and scenarios for the western U.S.: A crowd-sourced database and new geospatial tools foster a user community and predict broad climate warming of rivers and streams. Water Resources Research, 53:9181-9205. https://doi.org/10.1002/2017WR020969
+
+McNyset, K.M., C.J. Volk, and C.E. Jordan. 2015. Developing an effective model for predicting spatially and temporally continuous stream temperatures from remotely sensed land surface temperatures. Water. 7:6827-6846.
