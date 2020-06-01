@@ -696,6 +696,7 @@ lemh_temp_rkm_sf %>%
                                          name = "Mean Redd Density (redds/km)")) +
   coord_cartesian(ylim = c(sec_y_0, 16.5),
                   expand = F) +
+  theme(panel.grid = element_blank()) +
   labs(x = "River Kilometer",
        y = "Mean of 8-day Max Temp, Aug 29 (°C)",
        title = "Lemhi River")
@@ -761,6 +762,7 @@ aug_temp_rkm %>%
                                          name = "Mean Redd Density (redds/km)")) +
   coord_cartesian(ylim = c(sec_y_0, 16.5),
                   expand = F) +
+  theme(panel.grid = element_blank()) +
   labs(x = "River Kilometer",
        y = "Mean Aug Temp (°C)",
        title = "Lemhi River")
@@ -942,6 +944,7 @@ pahs_temp_rkm_sf %>%
                                          name = "Mean Redd Density (redds/km)")) +
   coord_cartesian(ylim = c(sec_y_0, 16.5),
                   expand = F) +
+  theme(panel.grid = element_blank()) +
   labs(x = "River Kilometer",
        y = "Mean of 8-day Max Temp, Aug 29 (°C)",
        title = "Pahsimeroi River")
@@ -1006,6 +1009,7 @@ aug_temp_rkm %>%
                                          name = "Mean Redd Density (redds/km)")) +
   coord_cartesian(ylim = c(sec_y_0, 16.5),
                   expand = F) +
+  theme(panel.grid = element_blank()) +
   labs(x = "River Kilometer",
        y = "Mean Aug Temp (°C)",
        title = "Pahsimeroi River")
@@ -1198,6 +1202,7 @@ upsa_temp_rkm_sf %>%
                                          name = "Mean Redd Density (redds/km)")) +
   coord_cartesian(ylim = c(sec_y_0, 16.5),
                   expand = F) +
+  theme(panel.grid = element_blank()) +
   labs(x = "River Kilometer",
        y = "Mean of 8-day Max Temp, Aug 29 (°C)",
        title = "Upper Salmon River")
@@ -1264,6 +1269,7 @@ aug_temp_rkm %>%
                                          name = "Mean Redd Density (redds/km)")) +
   coord_cartesian(ylim = c(sec_y_0, 16.5),
                   expand = F) +
+  theme(panel.grid = element_blank()) +
   labs(x = "River Kilometer",
        y = "Mean Aug Temp (°C)",
        title = "Upper Salmon River")
