@@ -52,6 +52,61 @@ mra_rkm %>%
   theme_bw() +
   labs(title = "River Kilometer Data")
 
+###############################
+# Add geomorphic reach to rkm #
+###############################
+geom_rch = tibble(wtsd = c('Lemhi',
+                           'Pahsimeroi',
+                           'Upper Salmon')) %>%
+  mutate(geo_rch = list(st_read('../MRA_HSI/data/geomorph/geo_reaches/Lem_Poly_Label.shp'),
+                        st_read('../MRA_HSI/data/geomorph/geo_reaches/Pah_Poly_Label.shp'),
+                        st_read('../MRA_HSI/data/geomorph/geo_reaches/US_Poly_Label.shp'))) %>%
+  mutate(geo_rch = map(geo_rch,
+                       .f = function(x) {
+                         st_transform(x, 
+                                      crs = st_crs(mra_rkm))
+                       })) %>%
+  mutate(River = recode(wtsd,
+                        'Lemhi' = 'Lemhi River',
+                        'Pahsimeroi' = 'Pahsimeroi River',
+                        'Upper Salmon' = 'Salmon River')) %>%
+  dplyr::select(River, geo_rch) %>%
+  unnest(cols = geo_rch) %>%
+  mutate(GeoReach = if_else(is.na(GeoReach),
+                            as.character(Name),
+                            as.character(GeoReach)),
+         GeoReach = str_replace(GeoReach,
+                                '-', '_'),
+         geo_num = str_extract(GeoReach, "[:digit:]+"),
+         geo_num = as.numeric(geo_num)) %>%
+  arrange(River, geo_num) %>%
+  mutate(GeoReach = factor(GeoReach,
+                           levels = paste('GR', 1:max(geo_num), sep = '_'))) %>%
+  dplyr::select(River, GeoReach, geometry) %>%
+  st_as_sf()
+
+rkm_geo_rch = mra_rkm %>%
+  st_join(geom_rch %>%
+            dplyr::select(-River),
+          join = st_is_within_distance,
+          dist = 500) %>%
+  inner_join(mra_rkm %>%
+               st_join(geom_rch %>%
+                         dplyr::select(-River),
+                       join = st_nearest_feature) %>%
+               st_drop_geometry() %>%
+               as_tibble()) %>%
+  rbind(mra_rkm %>%
+          st_join(geom_rch %>%
+                    dplyr::select(-River),
+                  join = st_is_within_distance,
+                  dist = 500) %>%
+          filter(is.na(GeoReach)))
+
+mra_rkm <- rkm_geo_rch
+rm(rkm_geo_rch)
+
+
 #############
 # REDD DATA #
 #############
