@@ -12,25 +12,6 @@ author:
     email: kevin.see@merck.com
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output:
-  bookdown::pdf_document2:
-    fig_height: 6
-    fig_width: 8
-    includes:
-      in_header: "../templates/header_ABS.tex"
-    pandoc_args:
-      - --lua-filter=../templates/scholarly-metadata.lua
-      - --lua-filter=../templates/author-info-blocks2.lua
-      - --lua-filter=../templates/pagebreak.lua
-  bookdown::word_document2:
-    fig_caption: yes
-    fig_height: 4
-    fig_width: 7
-    toc: yes
-    pandoc_args:
-      - --lua-filter=../templates/scholarly-metadata.lua
-      - --lua-filter=../templates/author-info-blocks.lua
-      - --lua-filter=../templates/pagebreak.lua
-    reference_docx: "../templates/ReportTemplate.docx"
   bookdown::html_document2:
     smart: false
     theme: flatly
@@ -43,6 +24,25 @@ output:
       - --lua-filter=../templates/scholarly-metadata.lua
       - --lua-filter=../templates/author-info-blocks.lua
       - --lua-filter=../templates/pagebreak.lua
+  bookdown::word_document2:
+    fig_caption: yes
+    fig_height: 4
+    fig_width: 7
+    toc: yes
+    pandoc_args:
+      - --lua-filter=../templates/scholarly-metadata.lua
+      - --lua-filter=../templates/author-info-blocks.lua
+      - --lua-filter=../templates/pagebreak.lua
+    reference_docx: "../templates/ReportTemplate.docx"
+  bookdown::pdf_document2:
+    fig_height: 6
+    fig_width: 8
+    includes:
+      in_header: "../templates/header_ABS.tex"
+    pandoc_args:
+      - --lua-filter=../templates/scholarly-metadata.lua
+      - --lua-filter=../templates/author-info-blocks2.lua
+      - --lua-filter=../templates/pagebreak.lua
 institute:
   - biomark: Biomark, Inc.
 csl: "../templates/american-fisheries-society.csl"
@@ -51,7 +51,11 @@ csl: "../templates/american-fisheries-society.csl"
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 # load knitr for markdown
 library(knitr)
-knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(echo=FALSE, 
+                      warning=FALSE, 
+                      message=FALSE,
+                      fig.path = "../figures/",
+                      dpi = 300)
 options(knitr.kable.NA = '-')
 options(knitr.table.format = "pandoc")
 
@@ -176,7 +180,8 @@ temp_rkm_sf = temp_rkm_sf %>%
                                                select(watershed, RCAID) %>%
                                                slice(near_rcaid)) %>%
                                    as_tibble() %>%
-                                   select(-geometry)))) %>%
+                                   select(-geometry)) %>%
+                       select(-GeoReach))) %>%
   select(watershed:RCAID, River, rkm, everything()) %>%
   group_by(watershed, year, variable, RCAID, River, rkm) %>%
   summarise_at(vars(starts_with("d")),
@@ -608,7 +613,7 @@ lemh_nrw_temp_rkm_redds_yr_map = aug_temp_rkm %>%
 
 Figures \@ref(fig:lemh-redds-n-temps) and \@ref(fig:lemh-redds-n-nrwt-temps) provide longitudinal temperature profiles, along with mean redd densities averaged across year for which survey data were available. Figure \@ref(fig:lemh-redds-n-temps) uses the mean of 8-day maximum temperature predictions for August 29 whereas Figure \@ref(fig:lemh-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted mean August temperature, averaged across years 2002-2011.
 
-```{r lemh-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Lemhi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Lemhi River and occurs at the Highway 29 bridge near Leadore and the confluence of Eighteenmile and Texas Creeks. River kilometer 91 is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+```{r lemh-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Lemhi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Lemhi River and occurs at the Highway 29 bridge near Leadore and the confluence of Eighteenmile and Texas Creeks. River kilometer 91 is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning. Numbers at the top and dashed vertical lines designate geomorphic reaches."}
 # calculate average redds per rkm
 lemh_redd_rkm = mra_redds %>%
   filter(Waterbody == "Lemhi River") %>%
@@ -616,14 +621,31 @@ lemh_redd_rkm = mra_redds %>%
   st_join(mra_rkm,
           join = st_nearest_feature,
           left = TRUE) %>%
-  group_by(rkm, SurveyYear) %>%
+  group_by(rkm, GeoReach, SurveyYear) %>%
   summarise(n_redds = n()) %>%
   ungroup() %>%
-  complete(rkm = 0:91, SurveyYear, fill = list(n_redds = 0)) %>% # need to set max rkm here
+    complete(mra_rkm %>%
+             filter(River == 'Lemhi River') %>%
+             as_tibble() %>%
+             dplyr::select(rkm, GeoReach) %>%
+             mutate(GeoReach = fct_drop(GeoReach)),
+           SurveyYear,
+           fill = list(n_redds = 0)) %>% # need to set max rkm here
   dplyr::select(- geometry) %>%
-  group_by(rkm) %>%
+  group_by(rkm, GeoReach) %>%
   summarise(mean_redds_km = mean(n_redds)) %>%
   ungroup()
+
+# for plotting geomorphic reach breaks
+lemh_geo_rch_label = lemh_redd_rkm %>%
+  group_by(GeoReach) %>%
+  summarise(min_rkm = min(rkm),
+            max_rkm = max(rkm)) %>%
+  mutate(label_txt = str_remove(GeoReach, "GR_"),
+         lead_min = lead(min_rkm),
+         label_rkm = (min_rkm + max_rkm) / 2,
+         sep_rkm = (max_rkm + lead_min) / 2)
+
 
 # mra_threshold %>%
 #   filter(species == 'chinook',
@@ -635,11 +657,22 @@ sec_y_0 = 12
 lemh_temp_rkm_sf %>%
   full_join(lemh_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
-    # optimum spawning temp range
+  # optimum spawning temp range
   geom_ribbon(aes(ymin = 7.2, 
                   ymax = 14.5),
               fill = "green2",
               alpha = 0.2) +
+  # mark out geomorphic reaches
+  geom_vline(data = lemh_geo_rch_label,
+             aes(xintercept = sep_rkm),
+             linetype = 2,
+             color = 'gray80') +
+  geom_text(data = lemh_geo_rch_label,
+            aes(label = label_txt,
+                x = label_rkm),
+            y = 16.3,
+            size = 3) +
+
   # modeled temperature
   geom_line(aes(y = mn_max_8d_temp_d241), 
             size = 1.1, 
@@ -668,7 +701,7 @@ lemh_temp_rkm_sf %>%
        title = "Lemhi River")
 ```
 
-```{r lemh-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Lemhi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Lemhi River and occurs at the Highway 29 bridge near Leadore and the confluence of Eighteenmile and Texas Creeks. River kilometer 91 is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+```{r lemh-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Lemhi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Lemhi River and occurs at the Highway 29 bridge near Leadore and the confluence of Eighteenmile and Texas Creeks. River kilometer 91 is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning. Numbers at the top and dashed vertical lines designate geomorphic reaches."}
 
 # longitudinal NorWeST temperature profile, with redd densities
 # aug_temp_rkm %>%
@@ -690,6 +723,16 @@ aug_temp_rkm %>%
   full_join(lemh_redd_rkm) %>%
   # filter(rkm %in% rkm[duplicated(rkm)])
   ggplot(aes(x = rkm)) +
+  # mark out geomorphic reaches
+  geom_vline(data = lemh_geo_rch_label,
+             aes(xintercept = sep_rkm),
+             linetype = 2,
+             color = 'gray80') +
+  geom_text(data = lemh_geo_rch_label,
+            aes(label = label_txt,
+                x = label_rkm),
+            y = 16.3,
+            size = 3) +
   # optimum spawning temp range
   geom_ribbon(aes(ymin = 7.2, 
                   ymax = 14.5),
@@ -815,7 +858,7 @@ pahs_temp_rkm_redds_yr_map
 
 Figure \@ref(fig:pahs-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:pahs-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted mean August temperature, averaged across years 2002-2011.
 
-```{r pahs-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Pahsimeroi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Pahsimeroi River and occurs at the confluence of the West Fork and East Fork Pahsimeroi River. River kilometer 85, the downstream extent is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+```{r pahs-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Pahsimeroi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Pahsimeroi River and occurs at the confluence of the West Fork and East Fork Pahsimeroi River. River kilometer 85, the downstream extent is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning. Numbers at the top and dashed vertical lines designate geomorphic reaches."}
 # calculate average redds per rkm
 pahs_redd_rkm = mra_redds %>%
   filter(Waterbody == "Pahsimeroi River") %>%
@@ -823,14 +866,37 @@ pahs_redd_rkm = mra_redds %>%
   st_join(mra_rkm,
           join = st_nearest_feature,
           left = TRUE) %>%
-  group_by(rkm, SurveyYear) %>%
+  group_by(rkm, GeoReach, SurveyYear) %>%
   summarise(n_redds = n()) %>%
   ungroup() %>%
-  complete(rkm = 0:85, SurveyYear, fill = list(n_redds = 0)) %>% # need to set max rkm here
+  complete(mra_rkm %>%
+             filter(River == 'Pahsimeroi River') %>%
+             as_tibble() %>%
+             dplyr::select(rkm, GeoReach) %>%
+             mutate(GeoReach = fct_drop(GeoReach)),
+           SurveyYear,
+           fill = list(n_redds = 0)) %>% # need to set max rkm here
   dplyr::select(- geometry) %>%
-  group_by(rkm) %>%
+  group_by(rkm, GeoReach) %>%
   summarise(mean_redds_km = mean(n_redds)) %>%
-  ungroup()
+  ungroup() %>%
+  mutate(GeoReach = factor(GeoReach,
+                           levels = unique(GeoReach)))
+
+# for plotting geomorphic reach breaks
+pahs_geo_rch_label = pahs_redd_rkm %>%
+  filter(!is.na(GeoReach)) %>%
+  group_by(GeoReach) %>%
+  summarise(min_rkm = min(rkm),
+            max_rkm = max(rkm)) %>%
+  mutate(label_txt = str_remove(GeoReach, "GR_"),
+         lead_min = lead(min_rkm),
+         label_rkm = (min_rkm + max_rkm) / 2,
+         sep_rkm = (max_rkm + lead_min) / 2) %>%
+  mutate(sep_rkm = if_else(is.na(sep_rkm),
+                           as.numeric(max_rkm),
+                           sep_rkm))
+
 
 # longitudinal temperature profile, with redd densities
 coeff = 0.4
@@ -843,6 +909,16 @@ pahs_temp_rkm_sf %>%
                   ymax = 14.5),
               fill = "green2",
               alpha = 0.2) +
+  # mark out geomorphic reaches
+  geom_vline(xintercept = c(min(pahs_geo_rch_label$min_rkm), 
+                            pahs_geo_rch_label$sep_rkm),
+             linetype = 2,
+             color = 'gray80') +
+  geom_text(data = pahs_geo_rch_label,
+            aes(label = label_txt,
+                x = label_rkm),
+            y = 16.3,
+            size = 3) +
   # modeled temperature
   geom_line(aes(y = mn_max_8d_temp_d241), 
             size = 1.1, 
@@ -871,7 +947,7 @@ pahs_temp_rkm_sf %>%
        title = "Pahsimeroi River")
 ```
 
-```{r pahs-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Pahsimeroi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Pahsimeroi River and occurs at the confluence of the West Fork and East Fork Pahsimeroi River. River kilometer 85, the downstream extent is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+```{r pahs-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Pahsimeroi River averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Pahsimeroi River and occurs at the confluence of the West Fork and East Fork Pahsimeroi River. River kilometer 85, the downstream extent is at the confluence with the Salmon River. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning. Numbers at the top and dashed vertical lines designate geomorphic reaches."}
 
 # longitudinal NorWeST temperature profile, with redd densities
 # aug_temp_rkm %>%
@@ -897,6 +973,16 @@ aug_temp_rkm %>%
                   ymax = 14.5),
               fill = "green2",
               alpha = 0.2) +
+  # mark out geomorphic reaches
+  geom_vline(xintercept = c(min(pahs_geo_rch_label$min_rkm), 
+                            pahs_geo_rch_label$sep_rkm),
+             linetype = 2,
+             color = 'gray80') +
+  geom_text(data = pahs_geo_rch_label,
+            aes(label = label_txt,
+                x = label_rkm),
+            y = 16.3,
+            size = 3) +
   # modeled temperature
   geom_line(aes(y = aug_temp), 
             size = 1.1, 
@@ -1027,29 +1113,50 @@ upsa_temp_rkm_redds_yr_map
 
 Figure \@ref(fig:upsa-redds-n-temps) provides a longitudinal temperature profile, in this case the mean of 8-day maximum temperature predictions for August 29, along with mean redd densities averaged across years for which survey data were available. Figure \@ref(fig:upsa-redds-n-nrwt-temps) provides similar information, but uses the NorWeST model's predicted mean August temperature, averaged across years 2002-2011.
 
-```{r upsa-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Upper Salmon River (above Redfish Lake Creek) averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Upper Salmon River at its source. River kilometer 56, the downstream extent, is at its confluence with Redfish Lake Creek. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+```{r upsa-redds-n-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Upper Salmon River (above Redfish Lake Creek) averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Upper Salmon River at its source. River kilometer 56, the downstream extent, is at its confluence with Redfish Lake Creek. A longitudinal temperature profile, with smoothed line (red), showing predictions of the mean of 8-day maximum temperatures at August 29 (averaged across available years) is also shown. The green shaded area are the optimum temperatures for Chinook spawning. Numbers at the top and dashed vertical lines designate geomorphic reaches."}
 # calculate average redds per rkm
 upsa_redd_rkm = mra_redds %>%
   filter(Waterbody == "Salmon River") %>%
-  st_intersection(upsa_temp_rkm_sf %>%
-                    st_make_grid(n = 1)) %>%
   dplyr::select(Waterbody, Species, SurveyYear, StartDate, Longitude, Latitude) %>%
   st_join(mra_rkm,
           join = st_nearest_feature,
           left = TRUE) %>%
-  filter(rkm <= 56) %>%
-  group_by(rkm, SurveyYear) %>%
+  group_by(rkm, GeoReach, SurveyYear) %>%
   summarise(n_redds = n()) %>%
   ungroup() %>%
-  complete(rkm = 0:56, SurveyYear, fill = list(n_redds = 0)) %>% # need to set max rkm here
+  complete(mra_rkm %>%
+             filter(River == 'Salmon River') %>%
+             as_tibble() %>%
+             dplyr::select(rkm, GeoReach) %>%
+             mutate(GeoReach = fct_drop(GeoReach)),
+           SurveyYear,
+           fill = list(n_redds = 0)) %>% # need to set max rkm here
   dplyr::select(- geometry) %>%
-  group_by(rkm) %>%
+  group_by(rkm, GeoReach) %>%
   summarise(mean_redds_km = mean(n_redds)) %>%
-  ungroup()
+  ungroup() %>%
+  mutate(GeoReach = factor(GeoReach,
+                           levels = unique(GeoReach)))
+
+# for plotting geomorphic reach breaks
+upsa_geo_rch_label = upsa_redd_rkm %>%
+  filter(!is.na(GeoReach)) %>%
+  group_by(GeoReach) %>%
+  summarise(min_rkm = min(rkm),
+            max_rkm = max(rkm)) %>%
+  mutate(label_txt = str_remove(GeoReach, "GR_"),
+         lead_min = lead(min_rkm),
+         label_rkm = (min_rkm + max_rkm) / 2,
+         sep_rkm = (max_rkm + lead_min) / 2) %>%
+  mutate(sep_rkm = if_else(is.na(sep_rkm),
+                           as.numeric(max_rkm),
+                           sep_rkm))
 
 # longitudinal temperature profile, with redd densities
-coeff = 0.05
-sec_y_0 = 13
+# coeff = 0.05
+# sec_y_0 = 13
+coeff = 0.1
+sec_y_0 = 7
 upsa_temp_rkm_sf %>%
   full_join(upsa_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
@@ -1058,6 +1165,16 @@ upsa_temp_rkm_sf %>%
                   ymax = 14.5),
               fill = "green2",
               alpha = 0.2) +
+  # mark out geomorphic reaches
+  geom_vline(xintercept = c(min(upsa_geo_rch_label$min_rkm),
+                            upsa_geo_rch_label$sep_rkm),
+             linetype = 2,
+             color = 'gray80') +
+  geom_text(data = upsa_geo_rch_label,
+            aes(label = label_txt,
+                x = label_rkm),
+            y = 16.3,
+            size = 3) +
   # modeled temperature
   geom_line(aes(y = mn_max_8d_temp_d241), 
             size = 1.1, 
@@ -1076,7 +1193,7 @@ upsa_temp_rkm_sf %>%
            fill = "steelblue4",
            color = "steelblue4") +
   scale_x_continuous(breaks = seq(0, 150, by = 5)) +
-  scale_y_continuous(breaks = seq(0, 18, by = 1),
+  scale_y_continuous(breaks = seq(0, 17, by = 1),
                      sec.axis = sec_axis(~ (. - sec_y_0) / coeff ,
                                          name = "Mean Redd Density (redds/km)")) +
   coord_cartesian(ylim = c(sec_y_0, 16.5),
@@ -1086,7 +1203,7 @@ upsa_temp_rkm_sf %>%
        title = "Upper Salmon River")
 ```
 
-```{r upsa-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Upper Salmon River (above Redfish Lake Creek) averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Upper Salmon River at its source. River kilometer 56, the downstream extent, is at its confluence with Redfish Lake Creek. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning."}
+```{r upsa-redds-n-nrwt-temps, fig.cap = "Mean redd density (redds/km) by river kilometer in the Upper Salmon River (above Redfish Lake Creek) averaged across years for which surveys were completed and data available. River kilometer 0 is the upstream extent of the mainstem Upper Salmon River at its source. River kilometer 56, the downstream extent, is at its confluence with Redfish Lake Creek. A longitudinal temperature profile, with smoothed line (red), showing predictions of the average August temperature from the NorWeST model (averaged across the years 2002-2011) is also shown. The green shaded area are the optimum temperatures for Chinook spawning. Numbers at the top and dashed vertical lines designate geomorphic reaches."}
 
 # longitudinal NorWeST temperature profile, with redd densities
 # aug_temp_rkm %>%
@@ -1114,6 +1231,16 @@ aug_temp_rkm %>%
                   ymax = 14.5),
               fill = "green2",
               alpha = 0.2) +
+  # mark out geomorphic reaches
+  geom_vline(xintercept = c(min(upsa_geo_rch_label$min_rkm),
+                            upsa_geo_rch_label$sep_rkm),
+             linetype = 2,
+             color = 'gray80') +
+  geom_text(data = upsa_geo_rch_label,
+            aes(label = label_txt,
+                x = label_rkm),
+            y = 16.3,
+            size = 3) +
   # modeled temperature
   geom_line(aes(y = aug_temp), 
             size = 1.1, 
