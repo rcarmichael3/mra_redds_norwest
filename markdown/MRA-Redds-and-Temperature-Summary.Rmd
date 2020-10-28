@@ -12,18 +12,6 @@ author:
     email: kevin.see@merck.com
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output:
-  bookdown::html_document2:
-    smart: false
-    theme: flatly
-    toc: yes
-    toc_depth: 3
-    toc_float: yes
-    fig_height: 6
-    fig_width: 8
-    pandoc_args:
-      - --lua-filter=../templates/scholarly-metadata.lua
-      - --lua-filter=../templates/author-info-blocks.lua
-      - --lua-filter=../templates/pagebreak.lua
   bookdown::word_document2:
     fig_caption: yes
     fig_height: 4
@@ -42,6 +30,18 @@ output:
     pandoc_args:
       - --lua-filter=../templates/scholarly-metadata.lua
       - --lua-filter=../templates/author-info-blocks2.lua
+      - --lua-filter=../templates/pagebreak.lua
+  bookdown::html_document2:
+    smart: false
+    theme: flatly
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    fig_height: 6
+    fig_width: 8
+    pandoc_args:
+      - --lua-filter=../templates/scholarly-metadata.lua
+      - --lua-filter=../templates/author-info-blocks.lua
       - --lua-filter=../templates/pagebreak.lua
 institute:
   - biomark: Biomark, Inc.
