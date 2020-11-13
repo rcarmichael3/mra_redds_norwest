@@ -22,15 +22,6 @@ output:
       - --lua-filter=../templates/author-info-blocks.lua
       - --lua-filter=../templates/pagebreak.lua
     reference_docx: "../templates/ReportTemplate.docx"
-  bookdown::pdf_document2:
-    fig_height: 6
-    fig_width: 8
-    includes:
-      in_header: "../templates/header_ABS.tex"
-    pandoc_args:
-      - --lua-filter=../templates/scholarly-metadata.lua
-      - --lua-filter=../templates/author-info-blocks2.lua
-      - --lua-filter=../templates/pagebreak.lua
   bookdown::html_document2:
     smart: false
     theme: flatly
@@ -42,6 +33,15 @@ output:
     pandoc_args:
       - --lua-filter=../templates/scholarly-metadata.lua
       - --lua-filter=../templates/author-info-blocks.lua
+      - --lua-filter=../templates/pagebreak.lua
+  bookdown::pdf_document2:
+    fig_height: 6
+    fig_width: 8
+    includes:
+      in_header: "../templates/header_ABS.tex"
+    pandoc_args:
+      - --lua-filter=../templates/scholarly-metadata.lua
+      - --lua-filter=../templates/author-info-blocks2.lua
       - --lua-filter=../templates/pagebreak.lua
 institute:
   - biomark: Biomark, Inc.
@@ -1243,8 +1243,10 @@ sec_y_0 = 7
 
 aug_temp_rkm %>%
   filter(watershed == 'Upper Salmon',
+         River == "Salmon River",
          scenario == 'Avg_02_11',
          # scenario == 'S30',
+         # scenario == 'S21',
          rkm <= max(upsa_redd_rkm$rkm)) %>%
   full_join(upsa_redd_rkm) %>%
   ggplot(aes(x = rkm)) +
