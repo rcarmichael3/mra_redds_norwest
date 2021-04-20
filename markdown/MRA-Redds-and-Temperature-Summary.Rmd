@@ -227,6 +227,118 @@ pts_df = pts_sf %>%
   as_tibble() %>%
   bind_cols(st_coordinates(pts_sf) %>% 
               as_tibble())
+
+```
+
+```{r}
+# put temperature into a data.frame for plotting purposes
+plot_df = temp_rkm_sf %>%
+  st_drop_geometry() %>%
+  pivot_longer(cols = starts_with("d"),
+               names_to = "jday",
+               values_to = "temp") %>%
+  mutate(across(jday,
+                str_remove, 
+                "^d"),
+         across(jday,
+                as.numeric)) %>%
+  group_by(watershed, year, variable, rkm, jday) %>%
+  summarise(across(temp,
+                   median,
+                   na.rm = T),
+            .groups = "drop") %>%
+  crossing(thresh_df %>%
+             filter(species == 'chinook',
+                    life_stage %in% c("summer_parr",
+                                      "spawning",
+                                      "winter_presmolt")) %>%
+             filter(life_stage != "winter_presmolt") %>%
+             select(-ends_with("date")) %>%
+             pivot_wider(names_from = "threshold",
+                         values_from = "temp_c")) %>%
+  rowwise() %>%
+  mutate(season = if_else(life_stage != "winter_presmolt",
+                          if_else(between(jday, start_julian, end_julian), T, F),
+                          if_else(jday >= start_julian | jday <= end_julian, T, F)),
+         opt_temp = if_else(between(temp, optimum_low, optimum_high), T, F),
+         tol_temp = if_else(between(temp, minimum, maximum), T, F),
+         bel_acute = if_else(between(temp, minimum, acute), T, F)) %>%
+  ungroup() %>%
+  arrange(species, 
+          life_stage,
+          watershed, 
+          year, 
+          jday,
+          rkm)
+
+temp_list_p = plot_df %>%
+  # filter(watershed == "Lemhi") %>%
+  # split(list(.$life_stage)) %>%
+  split(list(.$watershed)) %>%
+  map(.f = function(y) {
+    y %>% 
+      split(list(.$life_stage)) %>%
+      
+      map(.f = function(x) {
+        lfstg = x %>%
+          select(life_stage) %>%
+          distinct() %>%
+          mutate(life_stage = recode(life_stage,
+                                     "spawning" = "Spawning (8/10 - 9/30)",
+                                     "summer_parr" = "Summer Parr (6/10 - 10/15)",
+                                     "winter_presmolt" = "Winter Presmolt (11/14 - 3/01)")) %>%
+          pull(life_stage)
+        
+        if(grepl("Winter", lfstg)) {
+          x = x %>%
+            mutate(jday = if_else(jday > 200, jday - 365, jday))
+        }
+        
+        x %>%
+          mutate(temp = if_else(opt_temp, temp, NA_real_)) %>%
+          filter(season) %>%
+          mutate(date = ymd("20190101") + days(jday - 1)) %>%
+          ggplot(aes(x = date,
+                     y = rkm,
+                     fill = temp)) +
+          geom_tile() +
+          scale_fill_distiller(palette = "RdYlBu",
+                               direction = -1,
+                               limits = c(7, 17),
+                               na.value = "firebrick4",
+                               name = "8-day Mean-Max Temp") +
+          scale_x_date(date_breaks = "1 month",
+                       date_labels = "%b") +
+          theme(legend.position = "bottom",
+                panel.grid = element_blank()) +
+          facet_wrap(~ year,
+                     nrow = 1) +
+          labs(x = "Date",
+               y = "River Kilometer",
+               title = lfstg)
+      })
+  })
+
+
+wtsd_p_list = temp_list_p %>%
+  map(.f = function(x) {
+    ggarrange(plotlist = x,
+              ncol = 1,
+              nrow = 2,
+              common.legend = T,
+              legend = "bottom")
+  })
+
+for(wtsd in names(wtsd_p_list)) {
+  ggsave(paste0("../figures/", wtsd, "_temp_rkm_fig.pdf"),
+         plot = wtsd_p_list[[wtsd]],
+         width = 6.5,
+         height = 6,
+         dpi = 300)
+}
+
+
+
 ```
 
 
@@ -803,6 +915,10 @@ Figure \@ref(fig:lemh-chnk-lt-plot) summarizes longitudinal temperature profiles
 lt_plot(data = all_data, wtsd = "Lemhi", spc = "chinook")
 ```
 
+```{r lemh-chnk-temp_thres, fig.cap = "Heat map showing the 8-day mean of modelled maximum temperatures by date and river kilometer in the Lemhi, faceted by year. Dark red indicates the temperature was outside the optimal range for that Chinok lifestage."}
+wtsd_p_list$Lemhi
+```
+
 #### Steelhead
 
 Figure \@ref(fig:lemh-sthd-lt-plot) summarizes longitudinal temperature profiles (minimum, maximum, and smoothed) by life stage for steelhead in the Lemhi River along with minimum (dashed blue), maximum (dashed red), acute (solid red), and optimum (green ribbon) temperature thresholds from Carter (2005).
@@ -1048,6 +1164,10 @@ Figure \@ref(fig:pahs-chnk-lt-plot) summarizes longitudinal temperature profiles
 
 ```{r pahs-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Pahsimeroi River faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Pahsimeroi", spc = "chinook")
+```
+
+```{r pahs-chnk-temp_thres, fig.cap = "Heat map showing the 8-day mean of modelled maximum temperatures by date and river kilometer in the Pahsimeroi, faceted by year. Dark red indicates the temperature was outside the optimal range for that Chinok lifestage."}
+wtsd_p_list$Pahsimeroi
 ```
 
 #### Steelhead
@@ -1309,6 +1429,10 @@ Figure \@ref(fig:upsa-chnk-lt-plot) summarizes longitudinal temperature profiles
 
 ```{r upsa-chnk-lt-plot, fig.cap = "Longitudinal temperature profiles for the mainstem Upper Salmon River (above Redfish Lake Creek) faceted by Chinook salmon life stage. The bold black line shows the mean of 8-day max temperatures among dates within the life stage and dashed black lines show the minumum and maximum 8-day values among those dates. The green ribbon shows the optimum temperature range for that life stage whereas the blue line shows the minimum temperature threshold and the red dashed and solid lines show maximum and acute temperature thresholds, respectively, for each life stage."}
 lt_plot(data = all_data, wtsd = "Upper Salmon", spc = "chinook")
+```
+
+```{r upsa-chnk-temp_thres, fig.cap = "Heat map showing the 8-day mean of modelled maximum temperatures by date and river kilometer in the Upper Salmon, faceted by year. Dark red indicates the temperature was outside the optimal range for that Chinok lifestage."}
+wtsd_p_list$Pahsimeroi
 ```
 
 #### Steelhead
