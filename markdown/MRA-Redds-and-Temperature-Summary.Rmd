@@ -1075,7 +1075,8 @@ pahs_temp_rkm_sf %>%
            alpha = 0.3,
            fill = "steelblue4",
            color = "steelblue4") +
-  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
+  scale_x_continuous(breaks = seq(0, 45, by = 5),
+                     limits = c(0, 45)) +
   scale_y_continuous(breaks = seq(0, 18, by = 1),
                      sec.axis = sec_axis(~ (. - sec_y_0) / coeff ,
                                          name = "Mean Redd Density (redds/km)")) +
@@ -1140,7 +1141,8 @@ aug_temp_rkm %>%
            alpha = 0.3,
            fill = "steelblue4",
            color = "steelblue4") +
-  scale_x_continuous(breaks = seq(0, 150, by = 5)) +
+  scale_x_continuous(breaks = seq(0, 45, by = 5),
+                     limits = c(0, 45)) +
   scale_y_continuous(breaks = seq(0, 17, by = 1),
                      sec.axis = sec_axis(~ (. - sec_y_0) / coeff ,
                                          name = "Mean Redd Density (redds/km)")) +
