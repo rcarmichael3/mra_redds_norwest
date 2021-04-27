@@ -49,6 +49,8 @@ csl: "../templates/american-fisheries-society.csl"
 ---
   
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+# setwd('markdown')
+
 # load knitr for markdown
 library(knitr)
 knitr::opts_chunk$set(echo=FALSE, 
@@ -272,6 +274,7 @@ plot_df = temp_rkm_sf %>%
           rkm)
 
 temp_list_p = plot_df %>%
+  filter(!(watershed == "Pahsimeroi" & rkm > 45)) %>%
   # filter(watershed == "Lemhi") %>%
   # split(list(.$life_stage)) %>%
   split(list(.$watershed)) %>%
